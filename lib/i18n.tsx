@@ -33,6 +33,40 @@ const translations: Record<string, TranslationRow> = {
   "History": ["Historique", "Storico", "Historial", "Historie", "Histórico"],
   "Manager history": ["Historique manager", "Storico allenatore", "Historial del mánager", "Manager-Historie", "Histórico do treinador"],
   "Player profile": ["Fiche joueur", "Scheda giocatore", "Ficha del jugador", "Spielerprofil", "Perfil do jogador"],
+  "Planner": ["Planificateur", "Pianificatore", "Planificador", "Planer", "Planeador"],
+  "Planner unavailable.": ["Planificateur indisponible.", "Pianificatore non disponibile.", "Planificador no disponible.", "Planer nicht verfügbar.", "Planeador indisponível."],
+  "Team data unavailable.": ["Données d’équipe indisponibles.", "Dati squadra non disponibili.", "Datos del equipo no disponibles.", "Teamdaten nicht verfügbar.", "Dados da equipa indisponíveis."],
+  "Decision room": ["Salle de décision", "Sala decisioni", "Sala de decisiones", "Entscheidungsraum", "Sala de decisão"],
+  "Plan the next five gameweeks.": ["Planifie les cinq prochaines journées.", "Pianifica le prossime cinque giornate.", "Planifica las próximas cinco jornadas.", "Plane die nächsten fünf Spieltage.", "Planeia as próximas cinco jornadas."],
+  "Compare form, prices and schedule difficulty before committing a transfer.": ["Compare forme, prix et difficulté du calendrier avant de valider un transfert.", "Confronta forma, prezzi e difficoltà del calendario prima di confermare un trasferimento.", "Compara forma, precios y dificultad del calendario antes de confirmar un fichaje.", "Vergleiche Form, Preise und Spielplan, bevor du einen Transfer bestätigst.", "Compara forma, preços e dificuldade do calendário antes de confirmar uma transferência."],
+  "Planning window": ["Fenêtre de planification", "Finestra di pianificazione", "Ventana de planificación", "Planungsfenster", "Janela de planeamento"],
+  "Projection index": ["Indice de projection", "Indice di proiezione", "Índice de proyección", "Projektionsindex", "Índice de projeção"],
+  "Fixture difficulty": ["Difficulté du calendrier", "Difficoltà calendario", "Dificultad del calendario", "Spielplan-Schwierigkeit", "Dificuldade do calendário"],
+  "1 is favourable · 5 is demanding": ["1 est favorable · 5 est exigeant", "1 è favorevole · 5 è impegnativo", "1 es favorable · 5 es exigente", "1 ist günstig · 5 ist anspruchsvoll", "1 é favorável · 5 é exigente"],
+  "Best projections": ["Meilleures projections", "Migliori proiezioni", "Mejores proyecciones", "Beste Projektionen", "Melhores projeções"],
+  "Form adjusted by the next fixtures": ["Forme ajustée selon les prochains matchs", "Forma adattata alle prossime partite", "Forma ajustada por los próximos partidos", "Form angepasst an die nächsten Spiele", "Forma ajustada aos próximos jogos"],
+  "index": ["indice", "indice", "índice", "Index", "índice"],
+  "Toggle watchlist": ["Ajouter ou retirer de la liste", "Aggiungi o rimuovi dalla lista", "Añadir o quitar de la lista", "Beobachtungsliste umschalten", "Adicionar ou remover da lista"],
+  "Player comparison": ["Comparateur de joueurs", "Confronto giocatori", "Comparador de jugadores", "Spielervergleich", "Comparador de jogadores"],
+  "The same metrics, side by side": ["Les mêmes indicateurs, côte à côte", "Gli stessi indicatori, fianco a fianco", "Los mismos indicadores, lado a lado", "Dieselben Kennzahlen im Direktvergleich", "Os mesmos indicadores, lado a lado"],
+  "Player A": ["Joueur A", "Giocatore A", "Jugador A", "Spieler A", "Jogador A"],
+  "Player B": ["Joueur B", "Giocatore B", "Jugador B", "Spieler B", "Jogador B"],
+  "Projection": ["Projection", "Proiezione", "Proyección", "Projektion", "Projeção"],
+  "Form": ["Forme", "Forma", "Forma", "Form", "Forma"],
+  "Ownership": ["Sélection", "Selezione", "Selección", "Auswahlquote", "Seleção"],
+  "Rating": ["Note", "Valutazione", "Valoración", "Wertung", "Avaliação"],
+  "Watchlist": ["Liste de surveillance", "Lista osservati", "Lista de seguimiento", "Beobachtungsliste", "Lista de observação"],
+  "Saved to your account": ["Enregistrée dans ton compte", "Salvata nel tuo account", "Guardada en tu cuenta", "In deinem Konto gespeichert", "Guardada na tua conta"],
+  "Saved on this device": ["Enregistrée sur cet appareil", "Salvata su questo dispositivo", "Guardada en este dispositivo", "Auf diesem Gerät gespeichert", "Guardada neste dispositivo"],
+  "Watchlist could not be saved.": ["La liste n’a pas pu être enregistrée.", "Impossibile salvare la lista.", "No se pudo guardar la lista.", "Liste konnte nicht gespeichert werden.", "Não foi possível guardar a lista."],
+  "Remove from watchlist": ["Retirer de la liste", "Rimuovi dalla lista", "Quitar de la lista", "Von der Liste entfernen", "Remover da lista"],
+  "Star players from the projection list to follow them here.": ["Ajoute des joueurs depuis les projections pour les suivre ici.", "Aggiungi giocatori dalle proiezioni per seguirli qui.", "Añade jugadores desde las proyecciones para seguirlos aquí.", "Markiere Spieler in den Projektionen, um sie hier zu verfolgen.", "Adiciona jogadores das projeções para os acompanhares aqui."],
+  "Transfer plan": ["Plan de transferts", "Piano trasferimenti", "Plan de fichajes", "Transferplan", "Plano de transferências"],
+  "Prepare it here. Nothing is confirmed.": ["Prépare-le ici. Rien n’est validé.", "Preparalo qui. Nulla viene confermato.", "Prepáralo aquí. Nada queda confirmado.", "Hier vorbereiten. Nichts wird bestätigt.", "Prepara-o aqui. Nada é confirmado."],
+  "Open transfers": ["Ouvrir les transferts", "Apri trasferimenti", "Abrir fichajes", "Transfers öffnen", "Abrir transferências"],
+  "Planned moves": ["Mouvements prévus", "Mosse pianificate", "Movimientos previstos", "Geplante Wechsel", "Movimentos planeados"],
+  "Sign in and register a team to prepare transfers.": ["Connecte-toi et enregistre une équipe pour préparer des transferts.", "Accedi e registra una squadra per preparare i trasferimenti.", "Inicia sesión y registra un equipo para preparar fichajes.", "Melde dich an und registriere ein Team, um Transfers zu planen.", "Entra e regista uma equipa para preparares transferências."],
+  "Building the five-gameweek planner…": ["Construction du planificateur sur cinq journées…", "Creazione del pianificatore di cinque giornate…", "Creando el planificador de cinco jornadas…", "Fünf-Spieltage-Planer wird erstellt…", "A construir o planeador de cinco jornadas…"],
   "Player profile unavailable.": ["Fiche joueur indisponible.", "Scheda giocatore non disponibile.", "Ficha del jugador no disponible.", "Spielerprofil nicht verfügbar.", "Perfil do jogador indisponível."],
   "Loading player profile…": ["Chargement de la fiche…", "Caricamento scheda…", "Cargando ficha…", "Spielerprofil wird geladen…", "A carregar perfil…"],
   "Back to my team": ["Retour à mon équipe", "Torna alla mia squadra", "Volver a mi equipo", "Zurück zu meinem Team", "Voltar à minha equipa"],
@@ -83,6 +117,7 @@ const translations: Record<string, TranslationRow> = {
   "Bank after": ["Banque après", "Budget dopo", "Saldo después", "Bank danach", "Saldo depois"],
   "Points cost": ["Coût en points", "Costo in punti", "Coste en puntos", "Punktekosten", "Custo em pontos"],
   "Confirm transfers": ["Confirmer les transferts", "Conferma trasferimenti", "Confirmar fichajes", "Transfers bestätigen", "Confirmar transferências"],
+  "Confirm one transfer": ["Confirmer le transfert", "Conferma il trasferimento", "Confirmar el fichaje", "Transfer bestätigen", "Confirmar a transferência"],
   "Confirm {count} transfers": ["Confirmer {count} transferts", "Conferma {count} trasferimenti", "Confirmar {count} fichajes", "{count} Transfers bestätigen", "Confirmar {count} transferências"],
   "{count} transfers confirmed · -{points} points": ["{count} transferts confirmés · -{points} points", "{count} trasferimenti confermati · -{points} punti", "{count} fichajes confirmados · -{points} puntos", "{count} Transfers bestätigt · -{points} Punkte", "{count} transferências confirmadas · -{points} pontos"],
   "{count} transfers confirmed with no penalty.": ["{count} transferts confirmés sans pénalité.", "{count} trasferimenti confermati senza penalità.", "{count} fichajes confirmados sin penalización.", "{count} Transfers ohne Abzug bestätigt.", "{count} transferências confirmadas sem penalização."],
@@ -504,6 +539,28 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       template,
     );
   }, [language]);
+
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    const titleKey = pathname.startsWith("/players/")
+      ? "Player profile"
+      : pathname.startsWith("/rankings")
+        ? "Rankings"
+        : pathname.startsWith("/transfers")
+          ? "Transfers"
+          : pathname.startsWith("/leagues")
+            ? "Mini-leagues"
+            : pathname.startsWith("/planner")
+              ? "Planner"
+              : pathname.startsWith("/history")
+                ? "Manager history"
+                : pathname.startsWith("/help")
+                  ? "Help"
+                  : pathname.startsWith("/team")
+                    ? "My team"
+                    : "Fantasy football on Soccerverse";
+    document.title = `${t(titleKey)} | Fantasy SV`;
+  }, [language, t]);
 
   return (
     <I18nContext.Provider value={{ language, setLanguage, t, locale: locales[language] }}>

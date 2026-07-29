@@ -13,7 +13,7 @@ import {
   Trophy,
   UsersThree,
 } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { FantasyPlayer, LeagueMarket } from "@/lib/fantasy";
 import { defaultLineup, STARTER_LIMITS, type ChipType, type LineupSelection } from "@/lib/fantasy-rules";
@@ -111,6 +111,7 @@ export function SeasonHub({
   const [globalRankings, setGlobalRankings] = useState<GlobalStanding[]>([]);
   const [pointsGameweek, setPointsGameweek] = useState(1);
   const [playerPoints, setPlayerPoints] = useState<PlayerPointRow[]>([]);
+  const importedTransferPlan = useRef(false);
   const userId = session?.user.id;
 
   const loadTeam = useCallback(async () => {
@@ -167,6 +168,24 @@ export function SeasonHub({
   useEffect(() => {
     if (complete && lineup.length === 0) queueMicrotask(() => setLineup(defaultLineup(squad)));
   }, [complete, lineup.length, squad]);
+
+  useEffect(() => {
+    if (!teamData?.team || !market || importedTransferPlan.current) return;
+    importedTransferPlan.current = true;
+    try {
+      const stored = JSON.parse(window.localStorage.getItem("fantasy-sv:transfer-plan") || "[]") as TransferPair[];
+      if (!Array.isArray(stored)) return;
+      const valid = stored.filter((item) => {
+        const outgoingPlayer = market.players.find((player) => player.id === item.playerOutId);
+        const incomingPlayer = market.players.find((player) => player.id === item.playerInId);
+        return outgoingPlayer && incomingPlayer && outgoingPlayer.position === incomingPlayer.position
+          && squad.some((player) => player.id === item.playerOutId);
+      });
+      if (valid.length) queueMicrotask(() => setTransferBasket(valid));
+    } catch {
+      window.localStorage.removeItem("fantasy-sv:transfer-plan");
+    }
+  }, [market, squad, teamData?.team]);
 
   const currentGameweek = bootstrap?.season.currentGameweek || market?.round || 1;
   const gameweek = bootstrap?.gameweeks.find((item) => item.number === currentGameweek);
@@ -303,6 +322,7 @@ export function SeasonHub({
       await loadTeam();
       const count = transferBasket.length;
       setTransferBasket([]);
+      window.localStorage.removeItem("fantasy-sv:transfer-plan");
       setTransferOut("");
       setTransferIn("");
       setNotice(payload.pointsCost
@@ -510,7 +530,9 @@ export function SeasonHub({
               </div>
               <button className="hub-primary" type="button" disabled={pending || !transferBasket.length || previewBank < 0} onClick={() => void makeTransfer()}>
                 <ArrowsLeftRight size={17} /> {transferBasket.length
-                  ? t("Confirm {count} transfers", { count: transferBasket.length })
+                  ? transferBasket.length === 1
+                    ? t("Confirm one transfer")
+                    : t("Confirm {count} transfers", { count: transferBasket.length })
                   : t("Confirm transfers")}
               </button>
             </div>

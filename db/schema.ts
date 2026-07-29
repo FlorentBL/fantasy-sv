@@ -269,6 +269,16 @@ export const fantasyManagerHonours = sqliteTable("fantasy_manager_honours", {
   index("fantasy_manager_honours_user_idx").on(table.userId, table.awardedAt),
 ]);
 
+export const fantasyWatchlist = sqliteTable("fantasy_watchlist", {
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  seasonId: integer("season_id").notNull().references(() => fantasySeasons.id, { onDelete: "cascade" }),
+  playerId: integer("player_id").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("fantasy_watchlist_user_season_player_idx").on(table.userId, table.seasonId, table.playerId),
+  index("fantasy_watchlist_user_idx").on(table.userId, table.seasonId, table.createdAt),
+]);
+
 export const fantasySyncRuns = sqliteTable("fantasy_sync_runs", {
   id: text("id").primaryKey(),
   source: text("source").default("scheduled").notNull(),

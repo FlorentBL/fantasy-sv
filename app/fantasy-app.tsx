@@ -248,6 +248,7 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
         </a>
         <nav aria-label={t("Main navigation")}>
           <a href="/team">{t("My team")}</a>
+          <a href="/planner">{t("Planner")}</a>
           <a href="/transfers">{t("Transfers")}</a>
           <a href="/rankings">{t("Rankings")}</a>
           <a href="/leagues">{t("Leagues")}</a>

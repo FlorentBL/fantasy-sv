@@ -12,6 +12,7 @@ export function FeatureHeader() {
       <Link href="/" aria-label="Fantasy SV"><Image src="/fantasy-sv-logo.png" alt="Fantasy SV" width={384} height={160} /></Link>
       <nav className={styles.nav}>
         <Link href="/team">{t("My team")}</Link>
+        <Link href="/planner">{t("Planner")}</Link>
         <Link href="/transfers">{t("Transfers")}</Link>
         <Link href="/history">{t("Manager history")}</Link>
       </nav>

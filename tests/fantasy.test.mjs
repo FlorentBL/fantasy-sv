@@ -13,6 +13,7 @@ import {
   squadCost,
 } from "../lib/fantasy.ts";
 import { normalizeDatapackMode, parseDatapackMode } from "../lib/datapack.ts";
+import { clubStrengths, fixtureDifficulty, projectionIndex } from "../lib/fantasy-planner.ts";
 import { defaultLineup, scorePlayer, sellingPrice, transferPointsCost, validateLineup, validateSquad } from "../lib/fantasy-rules.ts";
 
 function player(id, position, price = 5, clubId = id) {
@@ -169,6 +170,24 @@ test("prices a multi-transfer batch after free transfers", () => {
   assert.equal(transferPointsCost(3, 1), 8);
   assert.equal(transferPointsCost(5, 2), 12);
   assert.equal(transferPointsCost(15, 0, true), 0);
+});
+
+test("builds schedule difficulty and conservative projection indices", () => {
+  const strengths = [60, 70, 80, 90, 100];
+  assert.equal(fixtureDifficulty(60, strengths, true), 1);
+  assert.equal(fixtureDifficulty(80, strengths, true), 3);
+  assert.equal(fixtureDifficulty(100, strengths, false), 5);
+  assert.equal(projectionIndex(5, [1, 1, 1, 1, 1]), 5.8);
+  assert.equal(projectionIndex(5, [5, 5, 5, 5, 5]), 4.2);
+  assert.equal(projectionIndex(8, [1, 1], true), 0);
+});
+
+test("rates club strength from the best fifteen players", () => {
+  const players = [
+    ...Array.from({ length: 15 }, (_, index) => player(index + 1, "MID", 5, 50)),
+    player(99, "MID", 5, 50),
+  ].map((item, index) => ({ ...item, powerScore: index === 15 ? 1 : 80 }));
+  assert.equal(clubStrengths(players).get(50), 80);
 });
 
 test("scores Soccerverse match statistics with fantasy rules", () => {

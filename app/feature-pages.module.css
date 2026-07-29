@@ -12,7 +12,7 @@
 }
 .header img { display: block; width: 158px; height: auto; }
 .nav { display: flex; align-items: center; gap: 10px; }
-.nav a { color: #c9d8f5; text-decoration: none; padding: 10px 14px; border-radius: 12px; font-weight: 700; }
+.nav a { color: #c9d8f5; text-decoration: none; padding: 10px 14px; border-radius: 12px; font-weight: 700; white-space: nowrap; }
 .nav a:hover { color: white; background: rgba(255, 255, 255, .07); }
 .main { width: min(1160px, calc(100% - 36px)); margin: 0 auto; padding: 58px 0 90px; }
 .back { display: inline-flex; color: #91b5ff; text-decoration: none; font-weight: 750; margin-bottom: 26px; }
@@ -52,8 +52,10 @@
 .loading { min-height: 55vh; display: grid; place-items: center; color: #aac0e6; }
 @media (max-width: 760px) {
   .header { min-height: 64px; padding: 8px 16px; }
-  .header img { width: 126px; }
-  .nav a:not(:last-child) { display: none; }
+  .header img { width: 108px; }
+  .nav { gap: 2px; }
+  .nav a { padding: 8px; font-size: 12px; }
+  .nav a:nth-child(3), .nav a:nth-child(4) { display: none; }
   .main { width: min(100% - 28px, 1160px); padding-top: 34px; }
   .hero { grid-template-columns: 1fr; gap: 20px; }
   .price { text-align: left; }

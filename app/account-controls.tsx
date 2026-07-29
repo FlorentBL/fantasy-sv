@@ -3,6 +3,7 @@
 import {
   Check,
   Bell,
+  ChartLineUp,
   DiscordLogo,
   GearSix,
   GlobeHemisphereWest,
@@ -269,6 +270,7 @@ export function AccountControls({
             {notice && <p className="dialog-notice" role="status">{notice}</p>}
             {error && <p className="dialog-error" role="alert">{error}</p>}
             <div className="settings-links">
+              <a href="/planner"><ChartLineUp size={17} /> {t("Planner")}</a>
               <a href="/history"><UserCircle size={17} /> {t("Manager history")}</a>
               <a href="/help"><Bell size={17} /> {t("Alerts and support")}</a>
               {isAdmin && <a href="/admin"><GearSix size={17} /> {t("Administration")}</a>}
