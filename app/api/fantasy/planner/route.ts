@@ -84,9 +84,9 @@ export async function GET() {
           ownership: teamCount?.count
             ? Math.round(((selectedByPlayer.get(player.id) || 0) / teamCount.count) * 1000) / 10
             : 0,
-          projection: projectionIndex(form, schedule.map((item) => Number(item.difficulty)), player.injured || player.banned),
+          projection: projectionIndex(form, schedule.map((item) => Number(item.difficulty)),
+            player.injured || player.banned, row?.recentMinutes || 0),
         },
-        schedule,
       };
     });
     return NextResponse.json({

@@ -23,10 +23,11 @@ export function fixtureDifficulty(opponentStrength: number, leagueStrengths: num
   return Math.max(1, Math.min(5, Math.round(1 + percentile * 4 + venueAdjustment)));
 }
 
-export function projectionIndex(form: number, difficulties: number[], unavailable = false) {
+export function projectionIndex(form: number, difficulties: number[], unavailable = false, recentMinutes = 450) {
   if (unavailable) return 0;
-  if (!difficulties.length) return Math.round(form * 10) / 10;
+  const reliability = 0.6 + Math.min(1, Math.max(0, recentMinutes) / 270) * 0.4;
+  if (!difficulties.length) return Math.round(form * reliability * 10) / 10;
   const modifier = difficulties.reduce((sum, difficulty) => sum + (1 + (3 - difficulty) * 0.08), 0)
     / difficulties.length;
-  return Math.round(form * modifier * 10) / 10;
+  return Math.round(form * reliability * modifier * 10) / 10;
 }

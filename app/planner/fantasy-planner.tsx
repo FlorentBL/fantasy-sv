@@ -16,7 +16,7 @@ type Schedule = {
 };
 type PlannerPlayer = FantasyPlayer & {
   stats: { totalPoints: number; totalMinutes: number; recentPoints: number; recentMinutes: number; form: number; ownership: number; projection: number };
-  schedule: Schedule[];
+  schedule?: Schedule[];
 };
 type PlannerPayload = {
   season: { id: number; name: string; currentGameweek: number; totalGameweeks: number };
@@ -87,25 +87,30 @@ export function FantasyPlanner() {
         const payload = await response.json() as PlannerPayload & { error?: string };
         if (!response.ok) throw new Error(payload.error || t("Planner unavailable."));
         const mode = normalizeDatapackMode(window.localStorage.getItem("fantasy-sv:datapack-mode"));
-        const standardClubNames = new Map(payload.players.map((player) => [player.clubId, player.standardClubName]));
+        const schedulesByClub = new Map(payload.clubs.map((club) => [club.id, club.schedule]));
+        const hydratedPayload: PlannerPayload = {
+          ...payload,
+          players: payload.players.map((player) => ({ ...player, schedule: schedulesByClub.get(player.clubId) || [] })),
+        };
+        const standardClubNames = new Map(hydratedPayload.players.map((player) => [player.clubId, player.standardClubName]));
         const renameSchedule = (schedule: Schedule[]) => schedule.map((fixture) => ({
           ...fixture,
           opponentName: mode === "default" ? standardClubNames.get(fixture.opponentId) || fixture.opponentName : fixture.opponentName,
         }));
         const displayPayload = mode === "default" ? {
-          ...payload,
-          clubs: payload.clubs.map((club) => ({
+          ...hydratedPayload,
+          clubs: hydratedPayload.clubs.map((club) => ({
             ...club,
             name: standardClubNames.get(club.id) || club.name,
             schedule: renameSchedule(club.schedule),
           })),
-          players: payload.players.map((player) => ({
+          players: hydratedPayload.players.map((player) => ({
             ...player,
             name: player.standardName,
             clubName: player.standardClubName,
-            schedule: renameSchedule(player.schedule),
+            schedule: renameSchedule(player.schedule || []),
           })),
-        } : payload;
+        } : hydratedPayload;
         setData(displayPayload);
         const top = [...displayPayload.players].sort((a, b) => b.stats.projection - a.stats.projection);
         setCompareA(String(top[0]?.id || ""));
@@ -266,7 +271,7 @@ export function FantasyPlanner() {
               <div className={styles.metrics}>
                 {[[t("Projection"), player.stats.projection.toFixed(1)], [t("Form"), player.stats.form.toFixed(1)], [t("Points"), player.stats.totalPoints], [t("Price"), player.price.toFixed(1)], [t("Ownership"), `${player.stats.ownership}%`], [t("Rating"), player.rating]].map(([label, value]) => <div className={styles.metric} key={label}><span>{label}</span><strong>{value}</strong></div>)}
               </div>
-              <div className={styles.scheduleStrip}>{player.schedule.map((fixture) => <FixtureBadge fixture={fixture} key={fixture.fixtureId} />)}</div>
+              <div className={styles.scheduleStrip}>{(player.schedule || []).map((fixture) => <FixtureBadge fixture={fixture} key={fixture.fixtureId} />)}</div>
             </article>)}
           </div>}
         </section>

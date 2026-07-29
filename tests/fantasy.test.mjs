@@ -179,6 +179,7 @@ test("builds schedule difficulty and conservative projection indices", () => {
   assert.equal(fixtureDifficulty(100, strengths, false), 5);
   assert.equal(projectionIndex(5, [1, 1, 1, 1, 1]), 5.8);
   assert.equal(projectionIndex(5, [5, 5, 5, 5, 5]), 4.2);
+  assert.equal(projectionIndex(10, [3], false, 90), 7.3);
   assert.equal(projectionIndex(8, [1, 1], true), 0);
 });
 
