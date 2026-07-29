@@ -1425,36 +1425,31 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hero-cta svg { transition: transform .2s ease; }
 .hero-cta:hover svg { transform: translateX(3px); }
 .hero-competition {
-  width: min(100%, 520px);
-  min-height: 110px;
+  width: min(100%, 390px);
   align-self: end;
   justify-self: end;
   z-index: 2;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 18px;
-  padding: 22px 24px;
-  border: 1px solid rgba(255, 255, 255, .42);
-  border-radius: var(--radius);
-  background: rgba(247, 250, 255, .92);
-  color: var(--ink);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px) saturate(140%);
+  gap: 14px;
+  padding: 0 8px 8px 0;
+  color: #f7f9ff;
+  text-shadow: 0 2px 18px rgba(5, 14, 36, .7);
 }
-.hero-competition > svg { color: var(--accent); }
+.hero-competition > svg { color: #82a2ff; }
 .hero-competition > div { display: flex; flex-direction: column; gap: 5px; }
 .hero-competition span {
-  color: var(--accent);
+  color: #82a2ff;
   font-family: var(--font-geist-mono);
   font-size: 10px;
   font-weight: 820;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
-.hero-competition strong { font-size: 20px; letter-spacing: -.035em; }
+.hero-competition strong { font-size: 21px; letter-spacing: -.035em; }
 .hero-competition small {
-  color: var(--muted);
+  color: rgba(247, 249, 255, .62);
   font-family: var(--font-geist-mono);
   font-size: 9px;
   text-transform: uppercase;
@@ -2064,13 +2059,12 @@ footer > a:last-child:hover { color: var(--accent-dark); }
     border-radius: 20px;
   }
   .hero-competition {
-    width: calc(100% - 36px);
-    min-height: 92px;
+    width: calc(100% - 40px);
     align-self: end;
-    justify-self: center;
+    justify-self: end;
     grid-column: 1;
     grid-row: 2;
-    margin-bottom: 16px;
+    margin: 0 20px 20px 0;
   }
   .squad-overview { width: calc(100% - 56px); }
   .builder-grid { grid-template-columns: 1fr; }
@@ -2103,9 +2097,9 @@ footer > a:last-child:hover { color: var(--accent-dark); }
   .hero-copy p { max-width: 330px; margin-top: 18px; font-size: 14px; }
   .hero-cta { min-height: 46px; margin-top: 20px; }
   .hero-competition {
-    min-height: 88px;
     grid-template-columns: auto 1fr;
-    padding: 15px;
+    margin: 0 16px 16px 0;
+    padding: 0;
   }
   .hero-competition strong { font-size: 17px; }
   .hero-competition small { display: none; }
@@ -2209,5 +2203,4 @@ footer > a:last-child:hover { color: var(--accent-dark); }
 @media (prefers-reduced-transparency: reduce) {
   .site-header, .hero-competition, .modal-backdrop { backdrop-filter: none; }
   .site-header { background: #f7fafe; }
-  .hero-competition { background: #f7faff; }
 }
