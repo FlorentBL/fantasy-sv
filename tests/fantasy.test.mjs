@@ -215,3 +215,11 @@ test("runs logged synchronization and deadline alerts from the scheduled worker"
   assert.match(worker, /sendDeadlineAlerts/);
   assert.match(worker, /ctx\.waitUntil/);
 });
+
+test("protects the administrator user registry and role changes", () => {
+  const route = readFileSync(new URL("../app/api/admin/users/route.ts", import.meta.url), "utf8");
+  assert.match(route, /requireAdmin/);
+  assert.match(route, /Tu ne peux pas retirer tes propres droits/);
+  assert.match(route, /Il doit rester au moins un administrateur/);
+  assert.match(route, /ON CONFLICT\(user_id\) DO UPDATE SET is_admin=1/);
+});

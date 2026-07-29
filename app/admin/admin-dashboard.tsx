@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowClockwise, Check, ShieldCheck, WarningCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, Check, GearSix, ShieldCheck, UsersThree, WarningCircle } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FantasyPlayer, LeagueMarket } from "@/lib/fantasy";
+import { AdminUsers } from "@/app/admin/admin-users";
 
 type AdminData = {
   admin: { name: string; email: string };
@@ -35,6 +36,7 @@ export function AdminDashboard() {
   const [playerId, setPlayerId] = useState("");
   const [delta, setDelta] = useState("1");
   const [reason, setReason] = useState("");
+  const [view, setView] = useState<"operations" | "users">("operations");
 
   const load = useCallback(async () => {
     const response = await fetch("/api/admin/status", { cache: "no-store" });
@@ -94,20 +96,27 @@ export function AdminDashboard() {
         <Link href="/"><Image src="/fantasy-sv-logo.png" alt="Fantasy SV" width={190} height={80} /></Link>
         <div><span>Administration</span><strong>{data.admin.name}</strong><Link href="/">Retour au jeu</Link></div>
       </header>
+      <nav className="admin-nav" aria-label="Navigation administrateur">
+        <button type="button" className={view === "operations" ? "active" : ""} onClick={() => setView("operations")}><GearSix size={17} /> Opérations</button>
+        <button type="button" className={view === "users" ? "active" : ""} onClick={() => setView("users")}><UsersThree size={17} /> Utilisateurs <span>{data.counts.users}</span></button>
+      </nav>
       <section className="admin-heading">
-        <div><span>Centre d’opérations</span><h1>Superviser la saison.</h1><p>Synchronisations, scores, corrections et retours de la bêta privée.</p></div>
-        <button type="button" disabled={pending} onClick={() => void action({ action: "sync" }, "Synchronisation terminée.")}>
+        {view === "operations"
+          ? <div><span>Centre d’opérations</span><h1>Superviser la saison.</h1><p>Synchronisations, scores, corrections et retours de la bêta privée.</p></div>
+          : <div><span>Communauté Fantasy SV</span><h1>Gérer les utilisateurs.</h1><p>Comptes, activité, équipes et niveaux d’accès.</p></div>}
+        {view === "operations" && <button type="button" disabled={pending} onClick={() => void action({ action: "sync" }, "Synchronisation terminée.")}>
           <ArrowClockwise size={18} /> Synchroniser maintenant
-        </button>
+        </button>}
       </section>
-      <section className="admin-kpis">
+      {view === "users" ? <AdminUsers /> : <>
+        <section className="admin-kpis">
         <article><span>Utilisateurs</span><strong>{data.counts.users}</strong></article>
         <article><span>Équipes</span><strong>{data.counts.teams}</strong></article>
         <article><span>Ligues</span><strong>{data.counts.leagues}</strong></article>
         <article><span>Points importés</span><strong>{data.counts.pointRows}</strong></article>
         <article><span>Retours ouverts</span><strong>{data.counts.newFeedback}</strong></article>
-      </section>
-      <div className="admin-grid">
+        </section>
+        <div className="admin-grid">
         <section className="admin-card">
           <div className="admin-card-title"><div><span>Saison</span><h2>État des journées</h2></div><strong>J{data.season?.currentGameweek || "—"}/38</strong></div>
           <div className="gameweek-statuses">
@@ -169,7 +178,8 @@ export function AdminDashboard() {
             })}
           </div>
         </section>
-      </div>
+        </div>
+      </>}
       {notice && <p className="admin-notice">{notice}</p>}
     </main>
   );
