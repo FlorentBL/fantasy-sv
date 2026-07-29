@@ -82,7 +82,7 @@ export function FantasyPlanner() {
       setWatchlist(readIds(WATCHLIST_KEY));
       setPlan(readPlan());
     });
-    fetch("/api/fantasy/planner")
+    fetch("/api/fantasy/planning")
       .then(async (response) => {
         const payload = await response.json() as PlannerPayload & { error?: string };
         if (!response.ok) throw new Error(payload.error || t("Planner unavailable."));
