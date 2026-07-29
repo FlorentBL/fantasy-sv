@@ -6,6 +6,7 @@ import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useI18n } from "@/lib/i18n";
+import { ScoreCalculator } from "@/app/help/score-calculator";
 
 type Notifications = {
   emailNotifications: boolean;
@@ -94,6 +95,7 @@ export function BetaHelp() {
         <h1>{t("Rules, alerts and support.")}</h1>
         <p>{t("Everything testers need to understand the game and help us improve it before the public launch.")}</p>
       </section>
+      <ScoreCalculator />
       <div className="help-grid">
         <section className="help-card faq-card">
           <div><Question size={25} /><span>{t("Help centre")}</span><h2>FAQ</h2></div>
