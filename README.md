@@ -1,19 +1,27 @@
 # Fantasy SV
 
-Fantasy SV is a Premier League fantasy football MVP powered by live Soccerverse data.
+Fantasy SV is a full-season Premier League fantasy football game powered by live Soccerverse data.
 
 [Play Fantasy SV](https://fantasy-sv.flobl.workers.dev/)
 
-## MVP
+## Game features
 
 - England's Soccerverse Premier League
 - 100-credit squad budget
 - 2 goalkeepers, 5 defenders, 5 midfielders and 3 forwards
 - Maximum three players per club
 - Rating-based, position-normalized pricing
+- 38 Soccerverse gameweeks with live deadlines and fixtures
+- Starting XI, ordered bench, captain and vice-captain
+- Points from minutes, goals, assists, clean sheets, saves, cards, defensive actions and bonuses
+- Automatic substitutions and captain fallback
+- One free transfer per gameweek, bankable up to five, then four points per extra transfer
+- Wildcard, Free Hit, Bench Boost and Triple Captain in each half-season
+- Overall ranking, gameweek history and private classic mini-leagues
 - Email/password accounts, with optional Discord OAuth
 - A user preference between Soccerverse's standard data and the El Rincón community pack
-- One locally saved Premier League squad
+- Server-side squad persistence for signed-in players and a local draft for visitors
+- French, English, Italian, Spanish, German and Portuguese
 
 ## Development
 
@@ -41,6 +49,8 @@ npm run db:migrate:remote
 npx wrangler secret put BETTER_AUTH_SECRET
 npm run deploy
 ```
+
+The Worker runs a scheduled Soccerverse synchronization every 15 minutes. It refreshes the calendar, imports completed match statistics and settles fantasy scores.
 
 To enable Discord, create an OAuth application with this redirect URL:
 

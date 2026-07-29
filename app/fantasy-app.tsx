@@ -18,6 +18,7 @@ import {
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AccountControls } from "@/app/account-controls";
+import { SeasonHub } from "@/app/season-hub";
 import {
   canAddPlayer,
   FANTASY_BUDGET,
@@ -87,6 +88,7 @@ export function FantasyApp() {
   const [notice, setNotice] = useState("");
   const [savedNotice, setSavedNotice] = useState(false);
   const [datapackMode, setDatapackMode] = useState<DatapackMode>("community");
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -177,7 +179,16 @@ export function FantasyApp() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }
 
+  const replaceSquad = useCallback((next: number[]) => {
+    setSavedSquad(next);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }, []);
+
   function addPlayer(player: FantasyPlayer) {
+    if (registered) {
+      setNotice(t("Use the transfer panel to change a registered squad."));
+      return;
+    }
     const reason = canAddPlayer(squad, player);
     if (reason) {
       const positionLimit = reason.match(/^Tu as déjà (\d+) joueurs à ce poste\.$/);
@@ -198,6 +209,10 @@ export function FantasyApp() {
   }
 
   function removePlayer(playerId: number) {
+    if (registered) {
+      setNotice(t("Use the transfer panel to change a registered squad."));
+      return;
+    }
     const player = squad.find((member) => member.id === playerId);
     persist(squadIds.filter((id) => id !== playerId));
     setNotice(player ? t("{player} was removed.", { player: player.name }) : t("Player removed."));
@@ -228,8 +243,9 @@ export function FantasyApp() {
           />
         </a>
         <nav aria-label={t("Main navigation")}>
+          <a href="#saison">{t("Season")}</a>
           <a href="#equipe">{t("My team")}</a>
-          <a href="#marche">{t("Market")}</a>
+          <a href="#ligues">{t("Leagues")}</a>
           <a href="#regles">{t("Rules")}</a>
         </nav>
         <AccountControls datapackMode={datapackMode} onDatapackModeChange={updateDatapackMode} />
@@ -270,6 +286,14 @@ export function FantasyApp() {
           <strong>{market ? market.round : "-"}<small>{market ? `/${market.rounds}` : ""}</small></strong>
         </div>
       </section>
+
+      <SeasonHub
+        market={displayMarket}
+        squad={squad}
+        complete={complete}
+        onSquadReplace={replaceSquad}
+        onTeamStatus={setRegistered}
+      />
 
       <section className="builder" id="equipe">
         <div className="builder-heading">
@@ -480,8 +504,8 @@ export function FantasyApp() {
       <section className="rules" id="regles">
         <div className="rules-heading">
           <Info size={28} weight="duotone" />
-          <h2>{t("MVP rules")}</h2>
-          <p>{t("A simple foundation to test selection before adding points, transfers and mini-leagues.")}</p>
+          <h2>{t("Fantasy SV rules")}</h2>
+          <p>{t("Build a squad, score from Soccerverse matches and compete across all 38 gameweeks.")}</p>
         </div>
         <div className="rules-grid">
           <div>
@@ -503,6 +527,26 @@ export function FantasyApp() {
             <ShieldCheck size={25} weight="duotone" />
             <strong>{t("Maximum three")}</strong>
             <p>{t("No more than {count} players from the same club.", { count: MAX_PLAYERS_PER_CLUB })}</p>
+          </div>
+          <div>
+            <Star size={25} weight="duotone" />
+            <strong>{t("Live scoring")}</strong>
+            <p>{t("Minutes, goals, assists, clean sheets, saves, cards, defensive actions and bonus points.")}</p>
+          </div>
+          <div>
+            <Trophy size={25} weight="duotone" />
+            <strong>{t("Captain x2")}</strong>
+            <p>{t("Your captain doubles his score. The vice-captain takes over if needed.")}</p>
+          </div>
+          <div>
+            <Coins size={25} weight="duotone" />
+            <strong>{t("Transfers")}</strong>
+            <p>{t("Bank up to five free transfers. Each extra transfer costs four points.")}</p>
+          </div>
+          <div>
+            <ShieldCheck size={25} weight="duotone" />
+            <strong>{t("Four chips")}</strong>
+            <p>{t("Wildcard, Free Hit, Bench Boost and Triple Captain are available in each half of the season.")}</p>
           </div>
         </div>
       </section>

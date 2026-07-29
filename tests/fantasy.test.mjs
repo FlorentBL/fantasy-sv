@@ -13,6 +13,7 @@ import {
   squadCost,
 } from "../lib/fantasy.ts";
 import { normalizeDatapackMode, parseDatapackMode } from "../lib/datapack.ts";
+import { defaultLineup, scorePlayer, sellingPrice, validateLineup, validateSquad } from "../lib/fantasy-rules.ts";
 
 function player(id, position, price = 5, clubId = id) {
   return {
@@ -131,6 +132,48 @@ test("recognizes a valid complete 15-player squad", () => {
     player(13, "FWD"), player(14, "FWD"), player(15, "FWD"),
   ];
   assert.equal(isCompleteSquad(squad), true);
+  assert.equal(validateSquad(squad), 750);
+  const lineup = defaultLineup(squad);
+  assert.equal(lineup.filter((item) => item.isStarter).length, 11);
+  assert.equal(lineup.filter((item) => item.isCaptain).length, 1);
+  assert.equal(lineup.filter((item) => item.isViceCaptain).length, 1);
+  assert.doesNotThrow(() => validateLineup(lineup, squad));
+});
+
+test("scores Soccerverse match statistics with fantasy rules", () => {
+  const result = scorePlayer({
+    playerId: 1,
+    position: "DEF",
+    minutes: 90,
+    saves: 0,
+    keyTackles: 6,
+    keyPasses: 4,
+    assists: 1,
+    goals: 1,
+    yellowCards: 1,
+    redCards: 0,
+    yellowRedCards: 0,
+    rating: 9,
+    teamGoalsConceded: 0,
+    manOfMatch: true,
+  }, 3);
+  assert.equal(result.points, 19);
+  assert.deepEqual(result.breakdown, {
+    appearance: 2,
+    goals: 6,
+    assists: 3,
+    cleanSheet: 4,
+    saves: 0,
+    cards: -1,
+    goalsConceded: 0,
+    defensiveContribution: 2,
+    bonus: 3,
+  });
+});
+
+test("uses half of a player's price profit when selling", () => {
+  assert.equal(sellingPrice(70, 80), 75);
+  assert.equal(sellingPrice(70, 65), 65);
 });
 
 test("normalizes and validates the user datapack preference", () => {
