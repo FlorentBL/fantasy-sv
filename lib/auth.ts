@@ -1,5 +1,6 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
+import { admin } from "better-auth/plugins";
 import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
@@ -41,5 +42,10 @@ export const auth = betterAuth({
     baseURL,
     "http://localhost:3000",
     "http://localhost:5173",
+  ],
+  plugins: [
+    admin({
+      bannedUserMessage: "Ce compte a été banni de Fantasy SV. Contacte un administrateur si tu penses qu’il s’agit d’une erreur.",
+    }),
   ],
 });

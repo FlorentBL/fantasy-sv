@@ -705,7 +705,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .admin-users-view { padding-bottom: 80px; }
 .admin-user-metrics {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   overflow: hidden;
   margin-bottom: 18px;
   border: 1px solid var(--line);
@@ -824,8 +824,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .admin-user-access { display: flex; align-items: center; gap: 7px; }
 .admin-user-access > span.admin { border-color: #bacefa; background: var(--accent-soft); color: var(--accent-dark); }
+.admin-user-access > span.banned { border-color: #f2c6cb; background: #fff3f4; color: var(--danger); }
 .admin-user-access > small, .admin-user-muted { color: var(--muted); font-size: 8px; }
 .admin-user-access > div { display: inline-flex; gap: 5px; }
+.admin-user-ban-confirm { min-width: 330px; align-items: center; }
+.admin-user-ban-confirm input {
+  width: 160px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+  font-size: 8px;
+}
 .admin-user-access button {
   min-height: 28px;
   padding: 0 9px;
@@ -2182,6 +2194,8 @@ footer > a:last-child:hover { color: var(--accent-dark); }
   .admin-user-identity > span { width: 34px; height: 34px; }
   .admin-user-identity small { max-width: 190px; }
   .admin-user-access { flex-wrap: wrap; }
+  .admin-user-ban-confirm { min-width: 0; flex-wrap: wrap; }
+  .admin-user-ban-confirm input { width: 100%; }
   .admin-users-registry > footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 4px; padding-block: 10px; }
   .sync-list > div { grid-template-columns: 22px 60px 1fr; }
   .sync-list time { grid-column: 3; }

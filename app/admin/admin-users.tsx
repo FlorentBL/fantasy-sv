@@ -27,11 +27,13 @@ type AdminUser = {
   teamName: string | null;
   totalPoints: number;
   overallRank: number | null;
+  banned: boolean;
+  banReason: string | null;
 };
 
 type UsersPayload = {
   users: AdminUser[];
-  summary: { total: number; joinedThisWeek: number; verified: number; teams: number; admins: number };
+  summary: { total: number; joinedThisWeek: number; verified: number; teams: number; admins: number; banned: number };
   error?: string;
 };
 
@@ -57,6 +59,8 @@ export function AdminUsers() {
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState("");
   const [confirmDemotion, setConfirmDemotion] = useState("");
+  const [confirmBan, setConfirmBan] = useState("");
+  const [banReason, setBanReason] = useState("");
 
   const load = useCallback(async () => {
     const response = await fetch("/api/admin/users", { cache: "no-store" });
@@ -75,7 +79,7 @@ export function AdminUsers() {
     const needle = query.trim().toLowerCase();
     if (!needle) return payload?.users || [];
     return (payload?.users || []).filter((user) =>
-      `${user.name} ${user.email} ${user.teamName || ""} ${user.providers.join(" ")} ${user.role}`.toLowerCase().includes(needle),
+      `${user.name} ${user.email} ${user.teamName || ""} ${user.providers.join(" ")} ${user.role} ${user.banned ? "banni" : ""} ${user.banReason || ""}`.toLowerCase().includes(needle),
     );
   }, [payload, query]);
 
@@ -103,6 +107,31 @@ export function AdminUsers() {
     }
   }
 
+  async function updateBan(user: AdminUser, banned: boolean) {
+    setUpdatingId(user.id);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, banned, reason: banned ? banReason : undefined }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Modification impossible.");
+      await load();
+      setConfirmBan("");
+      setBanReason("");
+      setNotice(banned
+        ? `${user.name} est banni et ses sessions ont été révoquées.`
+        : `${user.name} peut de nouveau accéder à Fantasy SV.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Modification impossible.");
+    } finally {
+      setUpdatingId("");
+    }
+  }
+
   if (!payload && !error) return <section className="admin-users-loading" aria-label="Chargement des utilisateurs"><div /><div /><div /><div /></section>;
   if (!payload) return <section className="admin-users-empty"><UsersThree size={40} /><h2>Registre indisponible</h2><p>{error}</p></section>;
 
@@ -114,6 +143,7 @@ export function AdminUsers() {
         <article><CheckCircle size={20} /><span>Comptes vérifiés</span><strong>{payload.summary.verified}</strong></article>
         <article><SoccerBall size={20} /><span>Équipes créées</span><strong>{payload.summary.teams}</strong></article>
         <article><ShieldCheck size={20} /><span>Administrateurs</span><strong>{payload.summary.admins}</strong></article>
+        <article><ShieldCheck size={20} /><span>Comptes bannis</span><strong>{payload.summary.banned}</strong></article>
       </section>
 
       <section className="admin-users-registry">
@@ -141,10 +171,22 @@ export function AdminUsers() {
                 ? <div className="admin-user-team"><strong>{user.teamName}</strong><small>{user.totalPoints} pts{user.overallRank ? ` · #${user.overallRank}` : ""}</small></div>
                 : <span className="admin-user-muted">Aucune équipe</span>}</td>
               <td data-label="Accès"><div className="admin-user-access">
-                <span className={user.role}>{user.role === "admin" ? "Admin" : "Joueur"}</span>
-                {user.role === "player" ? <button type="button" disabled={updatingId === user.id} onClick={() => void updateRole(user, "admin")}>
-                  {updatingId === user.id ? "Modification…" : "Rendre admin"}
-                </button> : user.isCurrentUser ? <small>Compte actuel</small> : confirmDemotion === user.id ? <div>
+                <span className={user.banned ? "banned" : user.role}>{user.banned ? "Banni" : user.role === "admin" ? "Admin" : "Joueur"}</span>
+                {user.banned ? <>
+                  {user.banReason && <small title={user.banReason}>{user.banReason}</small>}
+                  <button className="quiet" type="button" disabled={updatingId === user.id} onClick={() => void updateBan(user, false)}>
+                    {updatingId === user.id ? "Modification…" : "Débannir"}
+                  </button>
+                </> : user.role === "player" ? confirmBan === user.id ? <div className="admin-user-ban-confirm">
+                  <input autoFocus value={banReason} maxLength={240} onChange={(event) => setBanReason(event.target.value)} placeholder="Raison du bannissement" />
+                  <button className="danger" type="button" disabled={updatingId === user.id || banReason.trim().length < 5} onClick={() => void updateBan(user, true)}>Confirmer</button>
+                  <button className="quiet" type="button" onClick={() => { setConfirmBan(""); setBanReason(""); }}>Annuler</button>
+                </div> : <>
+                  <button type="button" disabled={updatingId === user.id} onClick={() => void updateRole(user, "admin")}>
+                    {updatingId === user.id ? "Modification…" : "Rendre admin"}
+                  </button>
+                  <button className="danger" type="button" disabled={updatingId === user.id} onClick={() => setConfirmBan(user.id)}>Bannir</button>
+                </> : user.isCurrentUser ? <small>Compte actuel</small> : confirmDemotion === user.id ? <div>
                   <button className="danger" type="button" disabled={updatingId === user.id} onClick={() => void updateRole(user, "player")}>Confirmer</button>
                   <button className="quiet" type="button" onClick={() => setConfirmDemotion("")}>Annuler</button>
                 </div> : <button className="danger" type="button" onClick={() => setConfirmDemotion(user.id)}>Retirer admin</button>}

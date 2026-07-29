@@ -242,8 +242,15 @@ test("runs logged synchronization and deadline alerts from the scheduled worker"
 
 test("protects the administrator user registry and role changes", () => {
   const route = readFileSync(new URL("../app/api/admin/users/route.ts", import.meta.url), "utf8");
+  const migration = readFileSync(new URL("../drizzle/0003_user_bans.sql", import.meta.url), "utf8");
+  const auth = readFileSync(new URL("../lib/auth.ts", import.meta.url), "utf8");
   assert.match(route, /requireAdmin/);
   assert.match(route, /Tu ne peux pas retirer tes propres droits/);
+  assert.match(route, /Tu ne peux pas bannir ton propre compte/);
+  assert.match(route, /DELETE FROM session WHERE user_id=/);
   assert.match(route, /Il doit rester au moins un administrateur/);
   assert.match(route, /ON CONFLICT\(user_id\) DO UPDATE SET is_admin=1/);
+  assert.match(migration, /ALTER TABLE `user` ADD COLUMN `banned`/);
+  assert.match(migration, /ALTER TABLE `session` ADD COLUMN `impersonated_by`/);
+  assert.match(auth, /bannedUserMessage/);
 });

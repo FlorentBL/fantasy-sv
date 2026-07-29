@@ -6,6 +6,10 @@ export const user = sqliteTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).default(false).notNull(),
   image: text("image"),
+  role: text("role").default("user").notNull(),
+  banned: integer("banned", { mode: "boolean" }).default(false).notNull(),
+  banReason: text("ban_reason"),
+  banExpires: integer("ban_expires", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
@@ -18,6 +22,7 @@ export const session = sqliteTable("session", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  impersonatedBy: text("impersonated_by"),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 }, (table) => [index("session_user_id_idx").on(table.userId)]);
 
