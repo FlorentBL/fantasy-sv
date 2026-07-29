@@ -2,6 +2,7 @@
 
 import {
   ArrowClockwise,
+  ArrowRight,
   CaretDown,
   Check,
   Coins,
@@ -257,9 +258,16 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
       <section className="hero" id="top">
         <div className="hero-scrim" />
         <div className="hero-copy">
-          <span className="hero-kicker">Fantasy football Soccerverse</span>
-          <h1><span>Premier</span><em>League</em></h1>
+          <span className="hero-kicker">{t("Fantasy football on Soccerverse")}</span>
+          <h1>
+            <span>{t("Your squad.")}</span>
+            <em>{t("Your season.")}</em>
+          </h1>
           <p>{t("Build fifteen Premier League players with 100 credits and prepare your season.")}</p>
+          <a className="hero-cta" href="#equipe">
+            {t("Build my squad")}
+            <ArrowRight size={18} weight="bold" aria-hidden="true" />
+          </a>
         </div>
         <div className="hero-competition" aria-label={t("Competition")}>
           <Trophy size={31} weight="duotone" />

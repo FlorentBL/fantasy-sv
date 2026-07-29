@@ -32,6 +32,22 @@ const translations: Record<string, TranslationRow> = {
   "Leagues": ["Ligues", "Leghe", "Ligas", "Ligen", "Ligas"],
   "Sign in": ["Connexion", "Accedi", "Iniciar sesión", "Anmelden", "Entrar"],
   "Fantasy SV home": ["Accueil Fantasy SV", "Home Fantasy SV", "Inicio de Fantasy SV", "Fantasy-SV-Startseite", "Início do Fantasy SV"],
+  "Fantasy football on Soccerverse": [
+    "Fantasy football sur Soccerverse",
+    "Fantasy football su Soccerverse",
+    "Fantasy football en Soccerverse",
+    "Fantasy Football auf Soccerverse",
+    "Fantasy football no Soccerverse",
+  ],
+  "Your squad.": ["Ton équipe.", "La tua squadra.", "Tu equipo.", "Dein Team.", "A tua equipa."],
+  "Your season.": ["Ta saison.", "La tua stagione.", "Tu temporada.", "Deine Saison.", "A tua época."],
+  "Build my squad": [
+    "Composer mon équipe",
+    "Crea la mia squadra",
+    "Crear mi equipo",
+    "Mein Team aufstellen",
+    "Criar a minha equipa",
+  ],
   "Build fifteen Premier League players with 100 credits and prepare your season.": [
     "Compose quinze joueurs de Premier League avec 100 crédits et prépare ta saison.",
     "Scegli quindici giocatori di Premier League con 100 crediti e prepara la tua stagione.",
