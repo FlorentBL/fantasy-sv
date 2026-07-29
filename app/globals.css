@@ -1403,7 +1403,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .minutes-control > span { grid-column: 1 / -1; margin-bottom: -2px; }
 .minutes-control input[type="range"] { width: 100%; accent-color: var(--accent); }
 .minutes-control input[type="number"],
-.score-stat-grid input {
+.score-stat-grid input,
+.performance-bonus-control input {
   width: 100%;
   min-height: 39px;
   border: 1px solid var(--line-strong);
@@ -1415,6 +1416,42 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 750;
   text-align: center;
 }
+.score-special-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.clean-sheet-control,
+.performance-bonus-control {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--control-radius);
+  background: #f8faff;
+}
+.clean-sheet-control { cursor: pointer; }
+.clean-sheet-control:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.clean-sheet-control input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+.clean-sheet-control > span,
+.performance-bonus-control > span { display: grid; gap: 3px; }
+.clean-sheet-control strong,
+.performance-bonus-control strong { color: var(--ink); font-size: 9px; }
+.clean-sheet-control small,
+.performance-bonus-control small { color: var(--muted); font-size: 8px; line-height: 1.35; }
+.performance-bonus-control { justify-content: space-between; }
+.performance-bonus-control input { width: 58px; flex: 0 0 58px; }
 .score-stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .score-stat-grid label { min-width: 0; }
 .score-stat-grid label > span {
@@ -2317,6 +2354,7 @@ footer > a:last-child:hover { color: var(--accent-dark); }
   .score-calculator-layout { grid-template-columns: 1fr; }
   .score-calculator-controls { padding: 18px; }
   .position-picker > div { grid-template-columns: repeat(2, 1fr); }
+  .score-special-controls { grid-template-columns: 1fr; }
   .score-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .score-result { border-top: 1px solid #30507f; border-left: 0; }
   .help-grid, .admin-grid { grid-template-columns: 1fr; }

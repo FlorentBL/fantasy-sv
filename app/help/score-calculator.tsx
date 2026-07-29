@@ -7,6 +7,7 @@ import type { FantasyPosition } from "@/lib/fantasy";
 import { useI18n } from "@/lib/i18n";
 
 type CalculatorStats = {
+  cleanSheet: boolean;
   minutes: number;
   goals: number;
   assists: number;
@@ -21,6 +22,7 @@ type CalculatorStats = {
 };
 
 const initialStats: CalculatorStats = {
+  cleanSheet: false,
   minutes: 0,
   goals: 0,
   assists: 0,
@@ -30,7 +32,7 @@ const initialStats: CalculatorStats = {
   yellowCards: 0,
   redCards: 0,
   yellowRedCards: 0,
-  teamGoalsConceded: 0,
+  teamGoalsConceded: 1,
   bonus: 0,
 };
 
@@ -44,8 +46,7 @@ const fields = [
   ["yellowCards", "Yellow cards", 2],
   ["redCards", "Red cards", 1],
   ["yellowRedCards", "Second-yellow red cards", 1],
-  ["bonus", "Bonus points", 3],
-] as const satisfies ReadonlyArray<readonly [keyof CalculatorStats, string, number]>;
+] as const satisfies ReadonlyArray<readonly [Exclude<keyof CalculatorStats, "cleanSheet">, string, number]>;
 
 const breakdownLabels: Record<keyof PointBreakdown, string> = {
   appearance: "Appearance",
@@ -71,6 +72,8 @@ export function ScoreCalculator() {
   const [position, setPosition] = useState<FantasyPosition>("MID");
   const [stats, setStats] = useState<CalculatorStats>(initialStats);
 
+  const cleanSheetPoints: Record<FantasyPosition, number> = { GK: 4, DEF: 4, MID: 1, FWD: 0 };
+
   const result = useMemo(() => scorePlayer({
     playerId: 0,
     position,
@@ -84,13 +87,25 @@ export function ScoreCalculator() {
     redCards: stats.redCards,
     yellowRedCards: stats.yellowRedCards,
     rating: 0,
-    teamGoalsConceded: stats.teamGoalsConceded,
+    teamGoalsConceded: stats.cleanSheet ? 0 : Math.max(1, stats.teamGoalsConceded),
     manOfMatch: false,
   }, stats.bonus), [position, stats]);
 
-  function updateStat(key: keyof CalculatorStats, value: number, max: number) {
+  function updateStat(key: Exclude<keyof CalculatorStats, "cleanSheet">, value: number, max: number) {
     const safeValue = Number.isFinite(value) ? Math.min(max, Math.max(0, Math.round(value))) : 0;
-    setStats((current) => ({ ...current, [key]: safeValue }));
+    setStats((current) => ({
+      ...current,
+      [key]: safeValue,
+      ...(key === "teamGoalsConceded" ? { cleanSheet: safeValue === 0 } : {}),
+    }));
+  }
+
+  function setCleanSheet(cleanSheet: boolean) {
+    setStats((current) => ({
+      ...current,
+      cleanSheet,
+      teamGoalsConceded: cleanSheet ? 0 : Math.max(1, current.teamGoalsConceded),
+    }));
   }
 
   function reset() {
@@ -153,6 +168,35 @@ export function ScoreCalculator() {
             />
           </label>
 
+          <div className="score-special-controls">
+            <label className="clean-sheet-control">
+              <input
+                type="checkbox"
+                checked={stats.cleanSheet}
+                onChange={(event) => setCleanSheet(event.target.checked)}
+              />
+              <span>
+                <strong>{t("Clean sheet bonus")}</strong>
+                <small>{t("{points} pts from 60 minutes.", { points: cleanSheetPoints[position] })}</small>
+              </span>
+            </label>
+            <label className="performance-bonus-control">
+              <span>
+                <strong>{t("Performance bonus")}</strong>
+                <small>{t("0 to 3 points after the match ranking.")}</small>
+              </span>
+              <input
+                type="number"
+                min="0"
+                max="3"
+                inputMode="numeric"
+                value={stats.bonus}
+                aria-label={t("Performance bonus")}
+                onChange={(event) => updateStat("bonus", Number(event.target.value), 3)}
+              />
+            </label>
+          </div>
+
           <div className="score-stat-grid">
             {fields.map(([key, label, max]) => (
               <label key={key}>
@@ -169,7 +213,7 @@ export function ScoreCalculator() {
             ))}
           </div>
           <p className="score-calculator-note">
-            {t("Clean-sheet and defensive-contribution points are calculated automatically. Bonus points are entered after the match ranking is known.")}
+            {t("Goals-conceded deductions and defensive-contribution points are calculated automatically.")}
           </p>
         </div>
 
