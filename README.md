@@ -2,6 +2,8 @@
 
 Fantasy SV is a Premier League fantasy football MVP powered by live Soccerverse data.
 
+[Play Fantasy SV](https://fantasy-sv.flobl.workers.dev/)
+
 ## MVP
 
 - England's Soccerverse Premier League
@@ -47,3 +49,7 @@ https://fantasy-sv.flobl.workers.dev/api/auth/callback/discord
 ```
 
 Then add `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` with `wrangler secret put`.
+
+## Contributing
+
+Fantasy SV is built in public. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
