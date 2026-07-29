@@ -390,6 +390,34 @@ export async function settleFantasyTeams(db: D1Database, seasonId: number, gamew
       best_gameweek=excluded.best_gameweek,
       updated_at=excluded.updated_at
   `).bind(now, seasonId).run();
+  const season = await db.prepare("SELECT total_gameweeks FROM fantasy_seasons WHERE id=?")
+    .bind(seasonId).first<{ total_gameweeks: number }>();
+  if (season && gameweek >= season.total_gameweeks) {
+    await db.prepare(`
+      INSERT OR IGNORE INTO fantasy_manager_honours (
+        id, user_id, season_id, type, title, league_id, awarded_at
+      )
+      SELECT
+        m.user_id || ':' || l.id || ':mini_league',
+        m.user_id,
+        l.season_id,
+        'mini_league',
+        l.name,
+        l.id,
+        ?
+      FROM fantasy_leagues l
+      JOIN fantasy_league_members m ON m.league_id=l.id
+      JOIN fantasy_teams winner ON winner.user_id=m.user_id AND winner.season_id=l.season_id
+      WHERE l.season_id=? AND l.type='classic'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM fantasy_league_members rival_member
+          JOIN fantasy_teams rival
+            ON rival.user_id=rival_member.user_id AND rival.season_id=l.season_id
+          WHERE rival_member.league_id=l.id AND rival.total_points>winner.total_points
+        )
+    `).bind(now, seasonId).run();
+  }
 }
 
 async function applyPointCorrections(db: D1Database, seasonId: number, gameweek: number) {

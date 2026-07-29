@@ -247,6 +247,14 @@ test("runs logged synchronization and deadline alerts from the scheduled worker"
   assert.match(worker, /ctx\.waitUntil/);
 });
 
+test("awards classic mini-league honours after the final gameweek", () => {
+  const seasonSource = readFileSync(new URL("../lib/soccerverse-season.ts", import.meta.url), "utf8");
+  assert.match(seasonSource, /fantasy_manager_honours/);
+  assert.match(seasonSource, /gameweek >= season\.total_gameweeks/);
+  assert.match(seasonSource, /l\.type='classic'/);
+  assert.match(seasonSource, /rival\.total_points>winner\.total_points/);
+});
+
 test("protects the administrator user registry and role changes", () => {
   const route = readFileSync(new URL("../app/api/admin/users/route.ts", import.meta.url), "utf8");
   const migration = readFileSync(new URL("../drizzle/0003_user_bans.sql", import.meta.url), "utf8");
