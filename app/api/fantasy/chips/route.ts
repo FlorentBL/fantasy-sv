@@ -21,6 +21,10 @@ export async function POST(request: Request) {
     const period = season.currentGameweek <= 19 ? 1 : 2;
     let snapshot: string | null = null;
     if (type === "free_hit") {
+      const transfers = await env.DB.prepare(`
+        SELECT COUNT(*) count FROM fantasy_transfers WHERE user_id=? AND season_id=? AND gameweek=?
+      `).bind(user.id, season.id, season.currentGameweek).first<{ count: number }>();
+      if (transfers?.count) throw new Error("Active le Free Hit avant d'effectuer les transferts de la journée.");
       const roster = await env.DB.prepare(`
         SELECT player_id playerId, position, club_id clubId, purchase_price_tenths purchasePriceTenths,
           acquired_gameweek acquiredGameweek FROM fantasy_roster WHERE user_id=? ORDER BY player_id
@@ -35,6 +39,11 @@ export async function POST(request: Request) {
     if (snapshot) {
       await env.DB.prepare("UPDATE fantasy_chips SET snapshot=? WHERE user_id=? AND season_id=? AND gameweek=?")
         .bind(snapshot, user.id, season.id, season.currentGameweek).run();
+    }
+    if (type === "wildcard" || type === "free_hit") {
+      await env.DB.prepare(`
+        UPDATE fantasy_transfers SET points_cost=0 WHERE user_id=? AND season_id=? AND gameweek=?
+      `).bind(user.id, season.id, season.currentGameweek).run();
     }
     return noStoreJson({ ok: true, type, gameweek: season.currentGameweek, period });
   } catch (error) {
