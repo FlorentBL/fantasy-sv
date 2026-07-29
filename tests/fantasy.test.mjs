@@ -60,7 +60,7 @@ test("queries Soccerverse division zero for the English top flight", () => {
   const appSource = readFileSync(new URL("../app/fantasy-app.tsx", import.meta.url), "utf8");
   assert.match(marketSource, /SOCCERVERSE_TOP_DIVISION\s*=\s*0/);
   assert.match(marketSource, /division=\$\{SOCCERVERSE_TOP_DIVISION\}/);
-  assert.match(appSource, /fetch\("\/api\/premier-league-v2\/"/);
+  assert.match(appSource, /fetch\("\/api\/premier-league-v3\/"/);
 });
 
 test("weights position-specific ratings", () => {
@@ -79,8 +79,17 @@ test("weights position-specific ratings", () => {
 test("calculates tied percentile ranks and premium prices", () => {
   assert.equal(percentileRank([60, 70, 70, 80], 70), 0.5);
   assert.equal(priceFromPercentile("MID", 0), 4.5);
-  assert.equal(priceFromPercentile("FWD", 1), 12.5);
+  assert.equal(priceFromPercentile("FWD", 1), 11);
   assert.ok(priceFromPercentile("DEF", 0.9) > priceFromPercentile("DEF", 0.5));
+});
+
+test("fits a strong balanced squad inside the 100-credit budget", () => {
+  const strongPercentile = 0.7;
+  const cost = 2 * priceFromPercentile("GK", strongPercentile)
+    + 5 * priceFromPercentile("DEF", strongPercentile)
+    + 5 * priceFromPercentile("MID", strongPercentile)
+    + 3 * priceFromPercentile("FWD", strongPercentile);
+  assert.ok(cost <= 100, `expected a strong squad to cost at most 100 credits, received ${cost}`);
 });
 
 test("prices each position relative to its own player pool", () => {
@@ -97,7 +106,7 @@ test("prices each position relative to its own player pool", () => {
     { ...base, position: "FWD", rating: 80 },
   ]);
   assert.equal(priced[0].price, 4.5);
-  assert.equal(priced[2].price, 12);
+  assert.equal(priced[2].price, 10.5);
   assert.equal(priced[3].percentile, 0.5);
 });
 

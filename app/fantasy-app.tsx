@@ -103,7 +103,7 @@ export function FantasyApp() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/premier-league-v2/", { signal: controller.signal })
+    fetch("/api/premier-league-v3/", { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json() as LeagueMarket & { error?: string };
         if (!response.ok) throw new Error(payload.error || "Soccerverse market unavailable.");

@@ -94,11 +94,12 @@ export function powerScore(player: RatingPlayer) {
 }
 
 const PRICE_RANGES: Record<FantasyPosition, { min: number; max: number }> = {
-  GK: { min: 4, max: 7 },
-  DEF: { min: 4, max: 8 },
-  MID: { min: 4.5, max: 12 },
-  FWD: { min: 4.5, max: 12.5 },
+  GK: { min: 4, max: 6.5 },
+  DEF: { min: 4, max: 7 },
+  MID: { min: 4.5, max: 10.5 },
+  FWD: { min: 4.5, max: 11 },
 };
+const PRICE_CURVE_EXPONENT = 2;
 
 export function percentileRank(sortedScores: number[], score: number) {
   if (sortedScores.length <= 1) return 0.5;
@@ -113,7 +114,7 @@ export function percentileRank(sortedScores: number[], score: number) {
 export function priceFromPercentile(position: FantasyPosition, percentile: number) {
   const { min, max } = PRICE_RANGES[position];
   const normalized = Math.min(1, Math.max(0, percentile));
-  const raw = min + (max - min) * normalized ** 1.6;
+  const raw = min + (max - min) * normalized ** PRICE_CURVE_EXPONENT;
   return Math.round(raw * 2) / 2;
 }
 
