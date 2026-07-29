@@ -17,8 +17,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { FantasyPlayer, LeagueMarket } from "@/lib/fantasy";
 import { defaultLineup, STARTER_LIMITS, type ChipType, type LineupSelection } from "@/lib/fantasy-rules";
+import { sellingPrice } from "@/lib/fantasy-rules";
 import { useI18n } from "@/lib/i18n";
 import type { FantasyView } from "@/app/fantasy-app";
+import extraStyles from "@/app/season-extras.module.css";
 
 type Bootstrap = {
   season: { id: number; name: string; currentGameweek: number; totalGameweeks: number };
@@ -50,6 +52,7 @@ type PlayerPointRow = {
   correction: number;
   breakdown: Record<string, number>;
 };
+type TransferPair = { playerOutId: number; playerInId: number };
 
 function formatDeadline(seconds: number, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -100,6 +103,7 @@ export function SeasonHub({
   const [pending, setPending] = useState(false);
   const [transferOut, setTransferOut] = useState("");
   const [transferIn, setTransferIn] = useState("");
+  const [transferBasket, setTransferBasket] = useState<TransferPair[]>([]);
   const [leagues, setLeagues] = useState<LeagueSummary[]>([]);
   const [leagueName, setLeagueName] = useState("");
   const [leagueCode, setLeagueCode] = useState("");
@@ -174,9 +178,24 @@ export function SeasonHub({
   const bench = lineupPlayers.filter((entry) => !entry.selection.isStarter)
     .sort((a, b) => (a.selection.benchOrder || 0) - (b.selection.benchOrder || 0));
   const outgoing = playerById.get(Number(transferOut));
+  const basketOutIds = transferBasket.map((item) => item.playerOutId);
+  const basketInIds = transferBasket.map((item) => item.playerInId);
   const transferCandidates = market?.players.filter((player) =>
-    outgoing && player.position === outgoing.position && !squad.some((member) => member.id === player.id)) || [];
+    outgoing && player.position === outgoing.position
+    && !squad.some((member) => member.id === player.id && !basketOutIds.includes(member.id))
+    && !basketInIds.includes(player.id)) || [];
+  const transferPreview = transferBasket.reduce((preview, item) => {
+    const out = playerById.get(item.playerOutId);
+    const incoming = playerById.get(item.playerInId);
+    const rosterRow = teamData?.roster?.find((row) => row.playerId === item.playerOutId);
+    if (!out || !incoming || !rosterRow) return preview;
+    const sale = sellingPrice(rosterRow.purchasePriceTenths, Math.round(out.price * 10));
+    return { sales: preview.sales + sale, purchases: preview.purchases + Math.round(incoming.price * 10) };
+  }, { sales: 0, purchases: 0 });
+  const previewBank = (teamData?.team?.bankTenths || 0) + transferPreview.sales - transferPreview.purchases;
   const activeChipThisGameweek = teamData?.chips?.find((chip) => chip.gameweek === currentGameweek && chip.state === "active");
+  const unlimitedTransfers = activeChipThisGameweek?.type === "wildcard" || activeChipThisGameweek?.type === "free_hit";
+  const previewHit = unlimitedTransfers ? 0 : Math.max(0, transferBasket.length - (teamData?.team?.freeTransfers || 0)) * 4;
 
   useEffect(() => {
     if (!bootstrap) return;
@@ -263,21 +282,32 @@ export function SeasonHub({
     })));
   }
 
-  async function makeTransfer() {
+  function addTransfer() {
     if (!transferOut || !transferIn) return;
+    setTransferBasket((items) => [...items, { playerOutId: Number(transferOut), playerInId: Number(transferIn) }]);
+    setTransferOut("");
+    setTransferIn("");
+  }
+
+  async function makeTransfer() {
+    if (!transferBasket.length) return;
     setPending(true);
     try {
       const response = await fetch("/api/fantasy/transfers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerOutId: Number(transferOut), playerInId: Number(transferIn) }),
+        body: JSON.stringify({ transfers: transferBasket }),
       });
       const payload = await response.json() as { error?: string; pointsCost?: number };
       if (!response.ok) throw new Error(payload.error || t("Transfer failed."));
       await loadTeam();
+      const count = transferBasket.length;
+      setTransferBasket([]);
       setTransferOut("");
       setTransferIn("");
-      setNotice(payload.pointsCost ? t("Transfer completed with a -4 point cost.") : t("Free transfer completed."));
+      setNotice(payload.pointsCost
+        ? t("{count} transfers confirmed · -{points} points", { count, points: payload.pointsCost })
+        : t("{count} transfers confirmed with no penalty.", { count }));
     } catch (error) {
       setNotice(error instanceof Error ? error.message : t("Transfer failed."));
     } finally {
@@ -454,18 +484,36 @@ export function SeasonHub({
       {(teamData?.team || view === "rankings") && (
         <div className="management-grid">
           {teamData?.team && <section className="management-card" id="transferts">
-            <div className="hub-card-heading"><div><span>{t("Market")}</span><h3>{t("Make a transfer")}</h3></div><ArrowsLeftRight size={23} /></div>
-            <label><span>{t("Sell")}</span><select value={transferOut} onChange={(event) => { setTransferOut(event.target.value); setTransferIn(""); }}>
-              <option value="">{t("Choose from your squad")}</option>
-              {squad.map((player) => <option key={player.id} value={player.id}>{player.name} · {player.position} · {player.price.toFixed(1)}</option>)}
-            </select></label>
-            <label><span>{t("Buy")}</span><select value={transferIn} disabled={!transferOut} onChange={(event) => setTransferIn(event.target.value)}>
-              <option value="">{t("Choose a replacement")}</option>
-              {transferCandidates.map((player) => <option key={player.id} value={player.id}>{player.name} · {player.clubName} · {player.price.toFixed(1)}</option>)}
-            </select></label>
-            <button className="hub-primary" type="button" disabled={pending || !transferOut || !transferIn} onClick={() => void makeTransfer()}>
-              <ArrowsLeftRight size={17} /> {t("Confirm transfer")}
-            </button>
+            <div className="hub-card-heading"><div><span>{t("Market")}</span><h3>{t("Multiple transfers")}</h3></div><ArrowsLeftRight size={23} /></div>
+            <div className={extraStyles.transferBuilder}>
+              <div className={extraStyles.transferDraft}>
+                <label><span>{t("Sell")}</span><select value={transferOut} onChange={(event) => { setTransferOut(event.target.value); setTransferIn(""); }}>
+                  <option value="">{t("Choose from your squad")}</option>
+                  {squad.filter((player) => !basketOutIds.includes(player.id)).map((player) => <option key={player.id} value={player.id}>{player.name} · {player.position} · {player.price.toFixed(1)}</option>)}
+                </select></label>
+                <label><span>{t("Buy")}</span><select value={transferIn} disabled={!transferOut} onChange={(event) => setTransferIn(event.target.value)}>
+                  <option value="">{t("Choose a replacement")}</option>
+                  {transferCandidates.map((player) => <option key={player.id} value={player.id}>{player.name} · {player.clubName} · {player.price.toFixed(1)}</option>)}
+                </select></label>
+                <button className={extraStyles.addButton} type="button" disabled={!transferOut || !transferIn} onClick={addTransfer}>{t("Add")}</button>
+              </div>
+              {transferBasket.length > 0 && <div className={extraStyles.basket}>
+                {transferBasket.map((item, index) => <div className={extraStyles.basketRow} key={`${item.playerOutId}:${item.playerInId}`}>
+                  <strong>{playerById.get(item.playerOutId)?.name}</strong><span>→</span><strong>{playerById.get(item.playerInId)?.name}</strong>
+                  <button className={extraStyles.removeButton} type="button" aria-label={t("Remove this transfer")} onClick={() => setTransferBasket((items) => items.filter((_, itemIndex) => itemIndex !== index))}>×</button>
+                </div>)}
+              </div>}
+              <div className={extraStyles.basketSummary}>
+                <span>{t("Transfers")}<strong>{transferBasket.length}</strong></span>
+                <span>{t("Bank after")}<strong>{(previewBank / 10).toFixed(1)} cr</strong></span>
+                <span>{t("Points cost")}<strong>{previewHit ? `-${previewHit}` : "0"}</strong></span>
+              </div>
+              <button className="hub-primary" type="button" disabled={pending || !transferBasket.length || previewBank < 0} onClick={() => void makeTransfer()}>
+                <ArrowsLeftRight size={17} /> {transferBasket.length
+                  ? t("Confirm {count} transfers", { count: transferBasket.length })
+                  : t("Confirm transfers")}
+              </button>
+            </div>
           </section>}
 
           {teamData?.team && <section className="management-card" id="ligues">
@@ -544,7 +592,7 @@ export function SeasonHub({
                 <details key={row.playerId}>
                   <summary>
                     <b>{index + 1}</b>
-                    <span>{player?.name || `#${row.playerId}`}<small>{player?.clubName || ""} · {row.minutes} min</small></span>
+                    <span>{player?.name || `#${row.playerId}`}<small>{player?.clubName || ""} · {row.minutes} min</small>{player && <a className={extraStyles.pointProfile} href={`/players/${player.id}`}>Voir la fiche</a>}</span>
                     <strong>{row.points} pts</strong>
                   </summary>
                   <div>

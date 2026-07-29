@@ -20,6 +20,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AccountControls } from "@/app/account-controls";
 import { SeasonHub } from "@/app/season-hub";
+import extraStyles from "@/app/season-extras.module.css";
 import {
   canAddPlayer,
   FANTASY_BUDGET,
@@ -250,6 +251,7 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
           <a href="/transfers">{t("Transfers")}</a>
           <a href="/rankings">{t("Rankings")}</a>
           <a href="/leagues">{t("Leagues")}</a>
+          <a href="/history">{t("History")}</a>
           <a href="/help">{t("Help")}</a>
         </nav>
         <AccountControls datapackMode={datapackMode} onDatapackModeChange={updateDatapackMode} />
@@ -475,6 +477,7 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
                             <b>{t(player.position)}</b>
                           </span>
                           <PlayerStatus player={player} />
+                          <a className={extraStyles.pointProfile} href={`/players/${player.id}`}>{t("Player profile")}</a>
                         </div>
                         <div className="player-rating" title={t("Power {score}", { score: player.powerScore })}>
                           <Star size={14} weight="fill" />

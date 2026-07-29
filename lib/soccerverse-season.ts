@@ -362,6 +362,34 @@ export async function settleFantasyTeams(db: D1Database, seasonId: number, gamew
       WHERE other.season_id=fantasy_teams.season_id AND other.total_points > fantasy_teams.total_points
     ) WHERE season_id=?
   `).bind(seasonId).run();
+  await db.prepare(`
+    INSERT INTO fantasy_manager_seasons (
+      id, user_id, season_id, team_name, total_points, overall_rank,
+      gameweeks_played, best_gameweek_points, best_gameweek, updated_at
+    )
+    SELECT
+      t.user_id || ':' || t.season_id, t.user_id, t.season_id, t.name, t.total_points, t.overall_rank,
+      COUNT(s.id), COALESCE(MAX(s.total_points), 0),
+      (
+        SELECT s2.gameweek FROM fantasy_team_gameweek_scores s2
+        WHERE s2.user_id=t.user_id AND s2.season_id=t.season_id
+        ORDER BY s2.total_points DESC, s2.gameweek ASC LIMIT 1
+      ),
+      ?
+    FROM fantasy_teams t
+    LEFT JOIN fantasy_team_gameweek_scores s
+      ON s.user_id=t.user_id AND s.season_id=t.season_id
+    WHERE t.season_id=?
+    GROUP BY t.user_id, t.season_id
+    ON CONFLICT(user_id, season_id) DO UPDATE SET
+      team_name=excluded.team_name,
+      total_points=excluded.total_points,
+      overall_rank=excluded.overall_rank,
+      gameweeks_played=excluded.gameweeks_played,
+      best_gameweek_points=excluded.best_gameweek_points,
+      best_gameweek=excluded.best_gameweek,
+      updated_at=excluded.updated_at
+  `).bind(now, seasonId).run();
 }
 
 async function applyPointCorrections(db: D1Database, seasonId: number, gameweek: number) {

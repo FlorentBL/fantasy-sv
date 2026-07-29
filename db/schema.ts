@@ -240,6 +240,35 @@ export const fantasyPriceHistory = sqliteTable("fantasy_price_history", {
   uniqueIndex("fantasy_price_history_unique_idx").on(table.seasonId, table.gameweek, table.playerId),
 ]);
 
+export const fantasyManagerSeasons = sqliteTable("fantasy_manager_seasons", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  seasonId: integer("season_id").notNull().references(() => fantasySeasons.id, { onDelete: "cascade" }),
+  teamName: text("team_name").notNull(),
+  totalPoints: integer("total_points").default(0).notNull(),
+  overallRank: integer("overall_rank"),
+  gameweeksPlayed: integer("gameweeks_played").default(0).notNull(),
+  bestGameweekPoints: integer("best_gameweek_points").default(0).notNull(),
+  bestGameweek: integer("best_gameweek"),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  uniqueIndex("fantasy_manager_seasons_user_season_idx").on(table.userId, table.seasonId),
+  index("fantasy_manager_seasons_user_idx").on(table.userId, table.seasonId),
+]);
+
+export const fantasyManagerHonours = sqliteTable("fantasy_manager_honours", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  seasonId: integer("season_id").notNull().references(() => fantasySeasons.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  leagueId: text("league_id").references(() => fantasyLeagues.id, { onDelete: "set null" }),
+  awardedAt: integer("awarded_at").notNull(),
+}, (table) => [
+  uniqueIndex("fantasy_manager_honours_unique_idx").on(table.userId, table.seasonId, table.type, table.leagueId),
+  index("fantasy_manager_honours_user_idx").on(table.userId, table.awardedAt),
+]);
+
 export const fantasySyncRuns = sqliteTable("fantasy_sync_runs", {
   id: text("id").primaryKey(),
   source: text("source").default("scheduled").notNull(),

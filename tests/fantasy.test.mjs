@@ -13,7 +13,7 @@ import {
   squadCost,
 } from "../lib/fantasy.ts";
 import { normalizeDatapackMode, parseDatapackMode } from "../lib/datapack.ts";
-import { defaultLineup, scorePlayer, sellingPrice, validateLineup, validateSquad } from "../lib/fantasy-rules.ts";
+import { defaultLineup, scorePlayer, sellingPrice, transferPointsCost, validateLineup, validateSquad } from "../lib/fantasy-rules.ts";
 
 function player(id, position, price = 5, clubId = id) {
   return {
@@ -162,6 +162,13 @@ test("recognizes a valid complete 15-player squad", () => {
   assert.equal(lineup.filter((item) => item.isCaptain).length, 1);
   assert.equal(lineup.filter((item) => item.isViceCaptain).length, 1);
   assert.doesNotThrow(() => validateLineup(lineup, squad));
+});
+
+test("prices a multi-transfer batch after free transfers", () => {
+  assert.equal(transferPointsCost(1, 1), 0);
+  assert.equal(transferPointsCost(3, 1), 8);
+  assert.equal(transferPointsCost(5, 2), 12);
+  assert.equal(transferPointsCost(15, 0, true), 0);
 });
 
 test("scores Soccerverse match statistics with fantasy rules", () => {

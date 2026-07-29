@@ -109,6 +109,13 @@ export async function PUT(request: Request) {
       `).bind(user.id, context.season.id, name, 1000 - costTenths, now, now),
       env.DB.prepare("DELETE FROM fantasy_lineups WHERE user_id=? AND season_id=? AND gameweek=?")
         .bind(user.id, context.season.id, context.gameweek.number),
+      env.DB.prepare(`
+        INSERT INTO fantasy_manager_seasons (
+          id, user_id, season_id, team_name, total_points, overall_rank,
+          gameweeks_played, best_gameweek_points, best_gameweek, updated_at
+        ) VALUES (?, ?, ?, ?, 0, NULL, 0, 0, NULL, ?)
+        ON CONFLICT(user_id, season_id) DO UPDATE SET team_name=excluded.team_name, updated_at=excluded.updated_at
+      `).bind(`${user.id}:${context.season.id}`, user.id, context.season.id, name, now),
     ];
     if (!existing) {
       statements.push(env.DB.prepare("DELETE FROM fantasy_roster WHERE user_id=?").bind(user.id));

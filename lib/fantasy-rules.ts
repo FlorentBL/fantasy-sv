@@ -156,3 +156,8 @@ export function sellingPrice(purchasePriceTenths: number, currentPriceTenths: nu
   if (currentPriceTenths <= purchasePriceTenths) return currentPriceTenths;
   return purchasePriceTenths + Math.floor((currentPriceTenths - purchasePriceTenths) / 2);
 }
+
+export function transferPointsCost(transferCount: number, freeTransfers: number, unlimited = false) {
+  if (unlimited) return 0;
+  return Math.max(0, Math.trunc(transferCount) - Math.max(0, Math.trunc(freeTransfers))) * 4;
+}
