@@ -37,6 +37,13 @@ type FixturePlayer = {
 };
 
 async function rpc<T>(method: string, params: Record<string, unknown>): Promise<T> {
+  const results = await rpcBatch<T>([{ id: method, method, params }]);
+  const result = results.get(method);
+  if (!result) throw new Error(`Soccerverse ${method} returned no data`);
+  return result;
+}
+
+async function rpcBatch<T>(calls: Array<{ id: string; method: string; params: Record<string, unknown> }>) {
   const response = await fetch(GSP_URL, {
     method: "POST",
     headers: {
@@ -44,14 +51,17 @@ async function rpc<T>(method: string, params: Record<string, unknown>): Promise<
       Origin: "https://play.soccerverse.com",
       Referer: "https://play.soccerverse.com/",
     },
-    body: JSON.stringify([{ jsonrpc: "2.0", id: method, method, params }]),
+    body: JSON.stringify(calls.map((call) => ({ jsonrpc: "2.0", ...call }))),
     signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok) throw new Error(`Soccerverse GSP HTTP ${response.status}`);
-  const [payload] = await response.json() as RpcResponse<T>[];
-  if (payload.error) throw new Error(payload.error.message || `Soccerverse ${method} failed`);
-  if (!payload.result?.data) throw new Error(`Soccerverse ${method} returned no data`);
-  return payload.result.data;
+  const payload = await response.json() as Array<RpcResponse<T> & { id: string }>;
+  const results = new Map<string, T>();
+  for (const item of payload) {
+    if (item.error) throw new Error(item.error.message || `Soccerverse ${item.id} failed`);
+    if (item.result?.data) results.set(String(item.id), item.result.data);
+  }
+  return results;
 }
 
 async function rest<T>(path: string): Promise<T> {
@@ -78,16 +88,20 @@ export async function fetchPremierLeagueSeason(): Promise<SyncedSeason> {
   const league = leagues.find((item) => item.country_id === "ENG" && item.level === ENGLISH_TOP_LEVEL && item.comp_type === 0);
   if (!league) throw new Error("La Premier League Soccerverse est introuvable.");
   const turns = await rpc<Turn[]>("get_all_turns", { comp_id: league.league_id });
-  const fixtureGroups = await Promise.all(turns.map((turn) => rpc<Fixture[]>("get_turn_fixtures", { turn_id: turn.turn_id })));
+  const fixtureGroups = await rpcBatch<Fixture[]>(turns.map((turn) => ({
+    id: String(turn.turn_id),
+    method: "get_turn_fixtures",
+    params: { turn_id: turn.turn_id },
+  })));
   return {
     season,
     league,
     turns,
-    fixtures: fixtureGroups.flatMap((fixtures, index) => fixtures.map((fixture) => ({
+    fixtures: turns.flatMap((turn) => (fixtureGroups.get(String(turn.turn_id)) || []).map((fixture) => ({
       ...fixture,
-      gameweek: turns[index].number,
-      kickoff: turns[index].date,
-      played: Boolean(turns[index].played),
+      gameweek: turn.number,
+      kickoff: turn.date,
+      played: Boolean(turn.played),
     }))),
   };
 }
@@ -160,7 +174,7 @@ export async function syncSeasonSchedule(db: D1Database) {
 export async function settlePlayedGameweeks(db: D1Database) {
   const gameweeks = await db.prepare(`
     SELECT season_id, number FROM fantasy_gameweeks
-    WHERE status='played' ORDER BY number ASC
+    WHERE status='played' ORDER BY number ASC LIMIT 1
   `).all<{ season_id: number; number: number }>();
   const market = await getLeagueMarket("ENG");
   const positionByPlayer = new Map(market.players.map((player) => [player.id, player.position]));
