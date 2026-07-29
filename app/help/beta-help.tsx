@@ -15,7 +15,7 @@ type Notifications = {
 };
 
 const faqs = [
-  ["How are player prices calculated?", "Prices are normalized by position from Soccerverse ratings and stay fixed during the season."],
+  ["How are player prices calculated?", "Soccerverse ratings and role-specific attributes rank players by position. FPL-calibrated price bands then keep premium players rare and squad building balanced."],
   ["When is my team locked?", "Your squad, starting eleven, captain and chips lock at the Soccerverse gameweek deadline."],
   ["How do automatic substitutions work?", "A non-playing starter is replaced by the first eligible bench player while keeping a valid formation."],
   ["What happens when my captain does not play?", "The vice-captain receives the captain multiplier when the captain plays zero minutes."],

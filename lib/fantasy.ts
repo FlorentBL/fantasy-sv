@@ -70,6 +70,7 @@ export function fantasyPosition(sourcePosition: string): FantasyPosition {
 
 type RatingPlayer = {
   position: FantasyPosition;
+  sourcePosition?: string;
   rating: number;
   ratingGk: number;
   ratingTackling: number;
@@ -78,28 +79,87 @@ type RatingPlayer = {
 };
 
 export function powerScore(player: RatingPlayer) {
+  const role = player.sourcePosition || player.position;
   switch (player.position) {
     case "GK":
-      return player.rating * 0.8 + player.ratingGk * 0.2;
-    case "DEF":
-      return player.rating * 0.7 + player.ratingTackling * 0.3;
-    case "MID":
-      return player.rating * 0.6
-        + player.ratingPassing * 0.2
-        + player.ratingShooting * 0.1
-        + player.ratingTackling * 0.1;
+      return player.rating * 0.6 + player.ratingGk * 0.4;
+    case "DEF": {
+      const fullBack = role === "LB" || role === "RB";
+      return fullBack
+        ? player.rating * 0.4 + player.ratingTackling * 0.3 + player.ratingPassing * 0.2 + player.ratingShooting * 0.1
+        : player.rating * 0.45 + player.ratingTackling * 0.45 + player.ratingPassing * 0.1;
+    }
+    case "MID": {
+      if (["DMC", "DML", "DMR"].includes(role)) {
+        return player.rating * 0.35 + player.ratingTackling * 0.4
+          + player.ratingPassing * 0.2 + player.ratingShooting * 0.05 - 7;
+      }
+      if (role === "CM") {
+        return player.rating * 0.35 + player.ratingPassing * 0.25
+          + player.ratingShooting * 0.2 + player.ratingTackling * 0.2 - 3;
+      }
+      if (["AMC", "AML", "AMR"].includes(role)) {
+        return player.rating * 0.3 + player.ratingPassing * 0.3
+          + player.ratingShooting * 0.35 + player.ratingTackling * 0.05 + 1;
+      }
+      return player.rating * 0.35 + player.ratingPassing * 0.3
+        + player.ratingShooting * 0.25 + player.ratingTackling * 0.1 - 2;
+    }
     case "FWD":
-      return player.rating * 0.6 + player.ratingShooting * 0.3 + player.ratingPassing * 0.1;
+      return role === "FC"
+        ? player.rating * 0.35 + player.ratingShooting * 0.5 + player.ratingPassing * 0.15
+        : player.rating * 0.35 + player.ratingShooting * 0.35 + player.ratingPassing * 0.3;
   }
 }
 
-const PRICE_RANGES: Record<FantasyPosition, { min: number; max: number }> = {
-  GK: { min: 4, max: 6.5 },
-  DEF: { min: 4, max: 7 },
-  MID: { min: 4.5, max: 10.5 },
-  FWD: { min: 4.5, max: 11 },
+type PriceBand = { below: number; price: number };
+
+// Calibrated against the official 2026/27 FPL launch-price distribution.
+// Soccerverse ratings decide the rank; these bands decide how scarce each price tier is.
+const PRICE_BANDS: Record<FantasyPosition, PriceBand[]> = {
+  GK: [
+    { below: 0.323, price: 4 },
+    { below: 0.71, price: 4.5 },
+    { below: 0.935, price: 5 },
+    { below: 0.984, price: 5.5 },
+    { below: 1, price: 6 },
+    { below: Infinity, price: 6 },
+  ],
+  DEF: [
+    { below: 0.254, price: 4 },
+    { below: 0.605, price: 4.5 },
+    { below: 0.827, price: 5 },
+    { below: 0.946, price: 5.5 },
+    { below: 0.978, price: 6 },
+    { below: 0.995, price: 6.5 },
+    { below: Infinity, price: 8 },
+  ],
+  MID: [
+    { below: 0.1, price: 4.5 },
+    { below: 0.47, price: 5 },
+    { below: 0.711, price: 5.5 },
+    { below: 0.843, price: 6 },
+    { below: 0.924, price: 6.5 },
+    { below: 0.948, price: 7 },
+    { below: 0.972, price: 7.5 },
+    { below: 0.984, price: 8 },
+    { below: 0.988, price: 8.5 },
+    { below: 0.996, price: 9.5 },
+    { below: Infinity, price: 12 },
+  ],
+  FWD: [
+    { below: 0.176, price: 4.5 },
+    { below: 0.338, price: 5 },
+    { below: 0.618, price: 5.5 },
+    { below: 0.824, price: 6 },
+    { below: 0.853, price: 6.5 },
+    { below: 0.882, price: 7 },
+    { below: 0.941, price: 7.5 },
+    { below: 0.971, price: 8 },
+    { below: 0.993, price: 9 },
+    { below: Infinity, price: 15.5 },
+  ],
 };
-const PRICE_CURVE_EXPONENT = 2;
 
 export function percentileRank(sortedScores: number[], score: number) {
   if (sortedScores.length <= 1) return 0.5;
@@ -112,10 +172,10 @@ export function percentileRank(sortedScores: number[], score: number) {
 }
 
 export function priceFromPercentile(position: FantasyPosition, percentile: number) {
-  const { min, max } = PRICE_RANGES[position];
   const normalized = Math.min(1, Math.max(0, percentile));
-  const raw = min + (max - min) * normalized ** PRICE_CURVE_EXPONENT;
-  return Math.round(raw * 2) / 2;
+  return PRICE_BANDS[position].find((band) => normalized < band.below)?.price
+    ?? PRICE_BANDS[position].at(-1)?.price
+    ?? 4;
 }
 
 export function priceLeaguePlayers<T extends RatingPlayer>(players: T[]) {

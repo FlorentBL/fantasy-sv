@@ -72,15 +72,19 @@ test("weights position-specific ratings", () => {
     ratingPassing: 75,
     ratingShooting: 85,
   };
-  assert.equal(powerScore({ ...base, position: "GK" }), 82);
-  assert.equal(powerScore({ ...base, position: "DEF" }), 77);
-  assert.equal(powerScore({ ...base, position: "FWD" }), 81);
+  assert.equal(powerScore({ ...base, position: "GK" }), 84);
+  assert.equal(powerScore({ ...base, position: "DEF" }), 75);
+  assert.equal(powerScore({ ...base, position: "FWD" }), 80.25);
+  assert.ok(
+    powerScore({ ...base, position: "MID", sourcePosition: "AMC" })
+      > powerScore({ ...base, position: "MID", sourcePosition: "DMC" }),
+  );
 });
 
 test("calculates tied percentile ranks and premium prices", () => {
   assert.equal(percentileRank([60, 70, 70, 80], 70), 0.5);
   assert.equal(priceFromPercentile("MID", 0), 4.5);
-  assert.equal(priceFromPercentile("FWD", 1), 11);
+  assert.equal(priceFromPercentile("FWD", 1), 15.5);
   assert.ok(priceFromPercentile("DEF", 0.9) > priceFromPercentile("DEF", 0.5));
 });
 
@@ -107,8 +111,28 @@ test("prices each position relative to its own player pool", () => {
     { ...base, position: "FWD", rating: 80 },
   ]);
   assert.equal(priced[0].price, 4.5);
-  assert.equal(priced[2].price, 10.5);
+  assert.equal(priced[2].price, 12);
   assert.equal(priced[3].percentile, 0.5);
+  assert.equal(priced[3].price, 5.5);
+});
+
+test("keeps official-style premium tiers scarce", () => {
+  const base = {
+    ratingGk: 50,
+    ratingTackling: 50,
+    ratingPassing: 50,
+    ratingShooting: 50,
+  };
+  const priced = priceLeaguePlayers([
+    ...Array.from({ length: 100 }, (_, index) => ({ ...base, position: "MID", rating: index })),
+    ...Array.from({ length: 100 }, (_, index) => ({ ...base, position: "FWD", rating: index })),
+  ]);
+  const midfielders = priced.filter((player) => player.position === "MID");
+  const forwards = priced.filter((player) => player.position === "FWD");
+  assert.ok(midfielders.filter((player) => player.price >= 8).length <= 4);
+  assert.ok(forwards.filter((player) => player.price >= 8).length <= 7);
+  assert.equal(Math.max(...midfielders.map((player) => player.price)), 12);
+  assert.equal(Math.max(...forwards.map((player) => player.price)), 15.5);
 });
 
 test("enforces budget, position and club constraints", () => {

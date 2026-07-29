@@ -189,6 +189,7 @@ async function createMarket(leagueCode: LeagueCode): Promise<LeagueMarket> {
       return {
         source: player,
         position,
+        sourcePosition: player.position_main || position,
         rating,
         ratingGk: Number(player.rating_gk || rating),
         ratingTackling: Number(player.rating_tackling || rating),

@@ -10,7 +10,7 @@ Fantasy SV is a full-season Premier League fantasy football game powered by live
 - 100-credit squad budget
 - 2 goalkeepers, 5 defenders, 5 midfielders and 3 forwards
 - Maximum three players per club
-- Rating-based, position-normalized pricing
+- Role-aware Soccerverse rating model with FPL-calibrated price tiers
 - 38 Soccerverse gameweeks with live deadlines and fixtures
 - Starting XI, ordered bench, captain and vice-captain
 - Points from minutes, goals, assists, clean sheets, saves, cards, defensive actions and bonuses
