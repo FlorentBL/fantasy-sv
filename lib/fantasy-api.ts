@@ -6,6 +6,14 @@ export async function requireFantasyUser(request: Request) {
   return session.user;
 }
 
+export async function requireAdmin(request: Request, db: D1Database) {
+  const user = await requireFantasyUser(request);
+  if (!user) return null;
+  const preference = await db.prepare("SELECT is_admin FROM user_preferences WHERE user_id=?")
+    .bind(user.id).first<{ is_admin: number }>();
+  return preference?.is_admin ? user : null;
+}
+
 export function noStoreJson(data: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers);
   headers.set("Cache-Control", "private, no-store");
@@ -22,4 +30,3 @@ export function parseInteger(value: unknown, label: string) {
   if (!Number.isSafeInteger(parsed)) throw new Error(`${label} invalide.`);
   return parsed;
 }
-

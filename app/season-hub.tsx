@@ -18,6 +18,7 @@ import { authClient } from "@/lib/auth-client";
 import type { FantasyPlayer, LeagueMarket } from "@/lib/fantasy";
 import { defaultLineup, STARTER_LIMITS, type ChipType, type LineupSelection } from "@/lib/fantasy-rules";
 import { useI18n } from "@/lib/i18n";
+import type { FantasyView } from "@/app/fantasy-app";
 
 type Bootstrap = {
   season: { id: number; name: string; currentGameweek: number; totalGameweeks: number };
@@ -41,6 +42,14 @@ type TeamPayload = {
 
 type LeagueSummary = { id: string; name: string; code: string; type: string; memberCount: number };
 type LeagueStanding = { managerName: string; teamName: string; totalPoints: number; overallRank: number | null; played: number };
+type GlobalStanding = { managerName: string; teamName: string; totalPoints: number; overallRank: number | null; gameweeksPlayed: number };
+type PlayerPointRow = {
+  playerId: number;
+  points: number;
+  minutes: number;
+  correction: number;
+  breakdown: Record<string, number>;
+};
 
 function formatDeadline(seconds: number, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -72,12 +81,14 @@ export function SeasonHub({
   complete,
   onSquadReplace,
   onTeamStatus,
+  view,
 }: {
   market: LeagueMarket | null;
   squad: FantasyPlayer[];
   complete: boolean;
   onSquadReplace: (ids: number[]) => void;
   onTeamStatus: (registered: boolean) => void;
+  view: FantasyView;
 }) {
   const { data: session } = authClient.useSession();
   const { t, locale } = useI18n();
@@ -93,6 +104,9 @@ export function SeasonHub({
   const [leagueName, setLeagueName] = useState("");
   const [leagueCode, setLeagueCode] = useState("");
   const [leagueTable, setLeagueTable] = useState<{ name: string; standings: LeagueStanding[] } | null>(null);
+  const [globalRankings, setGlobalRankings] = useState<GlobalStanding[]>([]);
+  const [pointsGameweek, setPointsGameweek] = useState(1);
+  const [playerPoints, setPlayerPoints] = useState<PlayerPointRow[]>([]);
   const userId = session?.user.id;
 
   const loadTeam = useCallback(async () => {
@@ -132,6 +146,13 @@ export function SeasonHub({
   }, [t]);
 
   useEffect(() => {
+    fetch("/api/fantasy/rankings")
+      .then((response) => response.json())
+      .then((payload) => setGlobalRankings((payload as { rankings?: GlobalStanding[] }).rankings || []))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     if (userId && !bootstrap) return;
     queueMicrotask(() => {
       void loadTeam().catch((error) => setNotice(error instanceof Error ? error.message : t("Team unavailable.")));
@@ -156,6 +177,21 @@ export function SeasonHub({
   const transferCandidates = market?.players.filter((player) =>
     outgoing && player.position === outgoing.position && !squad.some((member) => member.id === player.id)) || [];
   const activeChipThisGameweek = teamData?.chips?.find((chip) => chip.gameweek === currentGameweek && chip.state === "active");
+
+  useEffect(() => {
+    if (!bootstrap) return;
+    const settled = bootstrap.gameweeks.filter((item) => item.status === "settled").map((item) => item.number);
+    const target = settled.at(-1) || Math.max(1, bootstrap.season.currentGameweek - 1);
+    queueMicrotask(() => setPointsGameweek((current) => current === 1 ? target : current));
+  }, [bootstrap]);
+
+  useEffect(() => {
+    if (view !== "home" && view !== "rankings") return;
+    fetch(`/api/fantasy/points?gameweek=${pointsGameweek}`)
+      .then((response) => response.json())
+      .then((payload) => setPlayerPoints((payload as { players?: PlayerPointRow[] }).players || []))
+      .catch(() => setPlayerPoints([]));
+  }, [pointsGameweek, view]);
 
   async function saveComposition() {
     if (!session) {
@@ -415,9 +451,9 @@ export function SeasonHub({
         </aside>
       </div>
 
-      {teamData?.team && (
+      {(teamData?.team || view === "rankings") && (
         <div className="management-grid">
-          <section className="management-card" id="transferts">
+          {teamData?.team && <section className="management-card" id="transferts">
             <div className="hub-card-heading"><div><span>{t("Market")}</span><h3>{t("Make a transfer")}</h3></div><ArrowsLeftRight size={23} /></div>
             <label><span>{t("Sell")}</span><select value={transferOut} onChange={(event) => { setTransferOut(event.target.value); setTransferIn(""); }}>
               <option value="">{t("Choose from your squad")}</option>
@@ -430,9 +466,9 @@ export function SeasonHub({
             <button className="hub-primary" type="button" disabled={pending || !transferOut || !transferIn} onClick={() => void makeTransfer()}>
               <ArrowsLeftRight size={17} /> {t("Confirm transfer")}
             </button>
-          </section>
+          </section>}
 
-          <section className="management-card" id="ligues">
+          {teamData?.team && <section className="management-card" id="ligues">
             <div className="hub-card-heading"><div><span>{t("Community")}</span><h3>{t("Private leagues")}</h3></div><UsersThree size={23} /></div>
             <div className="league-list">
               {leagues.map((league) => (
@@ -460,9 +496,9 @@ export function SeasonHub({
               <input value={leagueCode} onChange={(event) => setLeagueCode(event.target.value.toUpperCase())} placeholder={t("Invite code")} maxLength={8} />
               <button type="button" disabled={pending || leagueCode.length < 6} onClick={() => void updateLeague("join")}>{t("Join")}</button>
             </div>
-          </section>
+          </section>}
 
-          <section className="management-card history-card">
+          {teamData?.team && <section className="management-card history-card">
             <div className="hub-card-heading"><div><span>{t("Season")}</span><h3>{t("Points history")}</h3></div><Crown size={23} /></div>
             <div className="score-history">
               {teamData.scores?.map((score) => (
@@ -470,8 +506,59 @@ export function SeasonHub({
               ))}
               {!teamData.scores?.length && <p>{t("Your first score will appear after the next completed gameweek.")}</p>}
             </div>
+          </section>}
+
+          <section className="management-card global-ranking-card" id="classement">
+            <div className="hub-card-heading"><div><span>{t("Competition")}</span><h3>{t("Overall ranking")}</h3></div><Medal size={23} /></div>
+            <div className="global-ranking-list">
+              {globalRankings.map((standing, index) => (
+                <div key={`${standing.managerName}:${standing.teamName}`}>
+                  <b>{index + 1}</b>
+                  <span>{standing.teamName}<small>{standing.managerName}</small></span>
+                  <strong>{standing.totalPoints}</strong>
+                </div>
+              ))}
+              {!globalRankings.length && <p>{t("The ranking will appear after teams join the season.")}</p>}
+            </div>
           </section>
         </div>
+      )}
+
+      {(view === "home" || view === "rankings") && (
+        <section className="points-explorer" id="points">
+          <div className="hub-card-heading">
+            <div><span>{t("Transparency")}</span><h3>{t("Player points detail")}</h3></div>
+            <label>
+              <span className="sr-only">{t("Gameweek")}</span>
+              <select value={pointsGameweek} onChange={(event) => setPointsGameweek(Number(event.target.value))}>
+                {(bootstrap?.gameweeks || []).filter((item) => item.status === "settled").map((item) => (
+                  <option value={item.number} key={item.number}>GW {item.number}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="points-table">
+            {playerPoints.slice(0, 50).map((row, index) => {
+              const player = playerById.get(row.playerId);
+              return (
+                <details key={row.playerId}>
+                  <summary>
+                    <b>{index + 1}</b>
+                    <span>{player?.name || `#${row.playerId}`}<small>{player?.clubName || ""} · {row.minutes} min</small></span>
+                    <strong>{row.points} pts</strong>
+                  </summary>
+                  <div>
+                    {Object.entries(row.breakdown).filter(([, value]) => value !== 0).map(([key, value]) => (
+                      <span key={key}>{t(key)} <b>{value > 0 ? `+${value}` : value}</b></span>
+                    ))}
+                    {row.correction !== 0 && <span>{t("Manual correction")} <b>{row.correction > 0 ? `+${row.correction}` : row.correction}</b></span>}
+                  </div>
+                </details>
+              );
+            })}
+            {!playerPoints.length && <p>{t("No settled player points for this gameweek yet.")}</p>}
+          </div>
+        </section>
       )}
 
       {notice && <p className="hub-notice" role="status">{notice}</p>}

@@ -13,11 +13,12 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
 
   const preference = await env.DB.prepare(
-    "SELECT datapack_mode FROM user_preferences WHERE user_id = ?",
-  ).bind(user.id).first<{ datapack_mode: string }>();
+    "SELECT datapack_mode, is_admin FROM user_preferences WHERE user_id = ?",
+  ).bind(user.id).first<{ datapack_mode: string; is_admin: number }>();
 
   return NextResponse.json({
     datapackMode: normalizeDatapackMode(preference?.datapack_mode),
+    isAdmin: Boolean(preference?.is_admin),
   }, {
     headers: { "Cache-Control": "private, no-store" },
   });

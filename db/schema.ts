@@ -52,6 +52,10 @@ export const verification = sqliteTable("verification", {
 export const userPreferences = sqliteTable("user_preferences", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
   datapackMode: text("datapack_mode").default("community").notNull(),
+  isAdmin: integer("is_admin", { mode: "boolean" }).default(false).notNull(),
+  emailNotifications: integer("email_notifications", { mode: "boolean" }).default(false).notNull(),
+  discordNotifications: integer("discord_notifications", { mode: "boolean" }).default(false).notNull(),
+  deadlineHours: integer("deadline_hours").default(24).notNull(),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
@@ -229,4 +233,52 @@ export const fantasyPriceHistory = sqliteTable("fantasy_price_history", {
   updatedAt: integer("updated_at").notNull(),
 }, (table) => [
   uniqueIndex("fantasy_price_history_unique_idx").on(table.seasonId, table.gameweek, table.playerId),
+]);
+
+export const fantasySyncRuns = sqliteTable("fantasy_sync_runs", {
+  id: text("id").primaryKey(),
+  source: text("source").default("scheduled").notNull(),
+  status: text("status").default("running").notNull(),
+  seasonId: integer("season_id"),
+  gameweek: integer("gameweek"),
+  settledGameweeks: integer("settled_gameweeks").default(0).notNull(),
+  message: text("message"),
+  startedAt: integer("started_at").notNull(),
+  completedAt: integer("completed_at"),
+}, (table) => [index("fantasy_sync_runs_started_idx").on(table.startedAt)]);
+
+export const fantasyPointCorrections = sqliteTable("fantasy_point_corrections", {
+  id: text("id").primaryKey(),
+  seasonId: integer("season_id").notNull().references(() => fantasySeasons.id, { onDelete: "cascade" }),
+  gameweek: integer("gameweek").notNull(),
+  playerId: integer("player_id").notNull(),
+  delta: integer("delta").notNull(),
+  reason: text("reason").notNull(),
+  adminUserId: text("admin_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [index("fantasy_point_corrections_gameweek_idx").on(table.seasonId, table.gameweek)]);
+
+export const fantasyFeedback = sqliteTable("fantasy_feedback", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  category: text("category").default("feedback").notNull(),
+  message: text("message").notNull(),
+  page: text("page"),
+  status: text("status").default("new").notNull(),
+  adminNote: text("admin_note"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [index("fantasy_feedback_status_idx").on(table.status, table.createdAt)]);
+
+export const fantasyNotificationLog = sqliteTable("fantasy_notification_log", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  seasonId: integer("season_id").notNull().references(() => fantasySeasons.id, { onDelete: "cascade" }),
+  gameweek: integer("gameweek").notNull(),
+  channel: text("channel").notNull(),
+  status: text("status").notNull(),
+  message: text("message"),
+  sentAt: integer("sent_at").notNull(),
+}, (table) => [
+  uniqueIndex("fantasy_notification_log_unique_idx").on(table.userId, table.seasonId, table.gameweek, table.channel),
 ]);

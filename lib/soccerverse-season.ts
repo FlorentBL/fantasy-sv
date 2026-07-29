@@ -171,11 +171,16 @@ export async function syncSeasonSchedule(db: D1Database) {
   return { ...data, currentGameweek };
 }
 
-export async function settlePlayedGameweeks(db: D1Database) {
-  const gameweeks = await db.prepare(`
-    SELECT season_id, number FROM fantasy_gameweeks
-    WHERE status='played' ORDER BY number ASC LIMIT 1
-  `).all<{ season_id: number; number: number }>();
+export async function settlePlayedGameweeks(db: D1Database, targetGameweek?: number) {
+  const gameweeks = targetGameweek == null
+    ? await db.prepare(`
+        SELECT season_id, number FROM fantasy_gameweeks
+        WHERE status='played' ORDER BY number ASC LIMIT 1
+      `).all<{ season_id: number; number: number }>()
+    : await db.prepare(`
+        SELECT season_id, number FROM fantasy_gameweeks
+        WHERE number=? AND status IN ('played','settled') ORDER BY season_id DESC LIMIT 1
+      `).bind(targetGameweek).all<{ season_id: number; number: number }>();
   const market = await getLeagueMarket("ENG");
   const positionByPlayer = new Map(market.players.map((player) => [player.id, player.position]));
   let settled = 0;
@@ -239,6 +244,7 @@ export async function settlePlayedGameweeks(db: D1Database) {
     statements.push(db.prepare("UPDATE fantasy_gameweeks SET status='settled', settled_at=?, updated_at=? WHERE season_id=? AND number=?")
       .bind(now, now, gameweek.season_id, gameweek.number));
     for (let index = 0; index < statements.length; index += 75) await db.batch(statements.slice(index, index + 75));
+    await applyPointCorrections(db, gameweek.season_id, gameweek.number);
     await settleFantasyTeams(db, gameweek.season_id, gameweek.number);
     await updatePlayerPrices(db, gameweek.season_id, gameweek.number, market);
     settled += 1;
@@ -278,7 +284,7 @@ async function updatePlayerPrices(db: D1Database, seasonId: number, gameweek: nu
   for (let index = 0; index < statements.length; index += 75) await db.batch(statements.slice(index, index + 75));
 }
 
-async function settleFantasyTeams(db: D1Database, seasonId: number, gameweek: number) {
+export async function settleFantasyTeams(db: D1Database, seasonId: number, gameweek: number) {
   const teams = await db.prepare("SELECT user_id FROM fantasy_teams WHERE season_id=?").bind(seasonId).all<{ user_id: string }>();
   const now = Date.now();
   for (const team of teams.results) {
@@ -294,8 +300,11 @@ async function settleFantasyTeams(db: D1Database, seasonId: number, gameweek: nu
       position: FantasyPosition; points: number; minutes: number;
     }>();
     if (lineups.results.length !== 15) continue;
-    const chip = await db.prepare("SELECT type FROM fantasy_chips WHERE user_id=? AND season_id=? AND gameweek=? AND state='active'")
+    const chip = await db.prepare("SELECT type FROM fantasy_chips WHERE user_id=? AND season_id=? AND gameweek=? AND state IN ('active','used')")
       .bind(team.user_id, seasonId, gameweek).first<{ type: string }>();
+    const previousScore = await db.prepare(`
+      SELECT settled_at FROM fantasy_team_gameweek_scores WHERE user_id=? AND season_id=? AND gameweek=?
+    `).bind(team.user_id, seasonId, gameweek).first<{ settled_at: number | null }>();
     const starters = lineups.results.filter((row) => row.is_starter);
     const playing = [...starters];
     if (chip?.type !== "bench_boost") {
@@ -327,7 +336,8 @@ async function settleFantasyTeams(db: D1Database, seasonId: number, gameweek: nu
         transfer?.cost || 0, total, chip?.type || null, now),
       db.prepare(`UPDATE fantasy_teams SET total_points=(
         SELECT COALESCE(SUM(total_points), 0) FROM fantasy_team_gameweek_scores WHERE user_id=?
-      ), free_transfers=MIN(5, free_transfers+1), updated_at=? WHERE user_id=?`).bind(team.user_id, now, team.user_id),
+      ), free_transfers=CASE WHEN ? THEN free_transfers ELSE MIN(5, free_transfers+1) END,
+        updated_at=? WHERE user_id=?`).bind(team.user_id, previousScore?.settled_at ? 1 : 0, now, team.user_id),
       db.prepare("UPDATE fantasy_chips SET state='used' WHERE user_id=? AND season_id=? AND gameweek=?").bind(team.user_id, seasonId, gameweek),
     ]);
     if (chip?.type === "free_hit") {
@@ -352,6 +362,30 @@ async function settleFantasyTeams(db: D1Database, seasonId: number, gameweek: nu
       WHERE other.season_id=fantasy_teams.season_id AND other.total_points > fantasy_teams.total_points
     ) WHERE season_id=?
   `).bind(seasonId).run();
+}
+
+async function applyPointCorrections(db: D1Database, seasonId: number, gameweek: number) {
+  const corrections = await db.prepare(`
+    SELECT player_id, SUM(delta) delta FROM fantasy_point_corrections
+    WHERE season_id=? AND gameweek=? GROUP BY player_id
+  `).bind(seasonId, gameweek).all<{ player_id: number; delta: number }>();
+  if (!corrections.results.length) return;
+  await db.batch(corrections.results.map((correction) => db.prepare(`
+    UPDATE fantasy_player_gameweek_points SET points=points+?, updated_at=?
+    WHERE season_id=? AND gameweek=? AND player_id=?
+  `).bind(correction.delta, Date.now(), seasonId, gameweek, correction.player_id)));
+}
+
+export async function recalculateFantasyGameweek(db: D1Database, gameweek: number) {
+  const row = await db.prepare(`
+    SELECT season_id FROM fantasy_gameweeks WHERE number=? ORDER BY season_id DESC LIMIT 1
+  `).bind(gameweek).first<{ season_id: number }>();
+  if (!row) throw new Error("Journée introuvable.");
+  await db.prepare("UPDATE fantasy_gameweeks SET status='played', settled_at=NULL, updated_at=? WHERE season_id=? AND number=?")
+    .bind(Date.now(), row.season_id, gameweek).run();
+  const settled = await settlePlayedGameweeks(db, gameweek);
+  if (!settled) throw new Error("Les données de match de cette journée ne sont pas encore disponibles.");
+  return { seasonId: row.season_id, gameweek, settled };
 }
 
 function validFormation(players: Array<{ position: FantasyPosition }>) {

@@ -2,6 +2,7 @@
 
 import {
   Check,
+  Bell,
   DiscordLogo,
   GearSix,
   GlobeHemisphereWest,
@@ -36,6 +37,7 @@ export function AccountControls({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [providers, setProviders] = useState({ ready: false, discord: false });
+  const [isAdmin, setIsAdmin] = useState(false);
   const userId = session?.user.id;
 
   useEffect(() => {
@@ -54,10 +56,11 @@ export function AccountControls({
     fetch("/api/preferences", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(t("Preferences unavailable."));
-        return response.json() as Promise<{ datapackMode?: DatapackMode }>;
+        return response.json() as Promise<{ datapackMode?: DatapackMode; isAdmin?: boolean }>;
       })
       .then((payload) => {
         if (payload.datapackMode) onDatapackModeChange(payload.datapackMode);
+        setIsAdmin(Boolean(payload.isAdmin));
       })
       .catch((fetchError) => {
         if (fetchError instanceof DOMException && fetchError.name === "AbortError") return;
@@ -265,6 +268,10 @@ export function AccountControls({
             </fieldset>
             {notice && <p className="dialog-notice" role="status">{notice}</p>}
             {error && <p className="dialog-error" role="alert">{error}</p>}
+            <div className="settings-links">
+              <a href="/help"><Bell size={17} /> {t("Alerts and support")}</a>
+              {isAdmin && <a href="/admin"><GearSix size={17} /> {t("Administration")}</a>}
+            </div>
             <button className="sign-out-dialog" type="button" onClick={() => authClient.signOut()}>
               <SignOut size={18} /> {t("Sign out")}
             </button>

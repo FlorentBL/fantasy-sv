@@ -191,3 +191,27 @@ test("keeps all responsive hero layers in the same grid column", () => {
   assert.match(tabletRules, /\.hero-scrim\s*\{[^}]*grid-column:\s*1/s);
   assert.match(tabletRules, /\.hero-competition\s*\{[^}]*grid-column:\s*1/s);
 });
+
+test("ships the beta operations migration and dedicated game workspaces", () => {
+  const migration = readFileSync(new URL("../drizzle/0002_beta_operations.sql", import.meta.url), "utf8");
+  for (const table of [
+    "fantasy_sync_runs",
+    "fantasy_point_corrections",
+    "fantasy_feedback",
+    "fantasy_notification_log",
+  ]) {
+    assert.match(migration, new RegExp(`CREATE TABLE \`${table}\``));
+  }
+
+  for (const route of ["team", "transfers", "leagues", "rankings", "help", "admin"]) {
+    const source = readFileSync(new URL(`../app/${route}/page.tsx`, import.meta.url), "utf8");
+    assert.match(source, /export default function/);
+  }
+});
+
+test("runs logged synchronization and deadline alerts from the scheduled worker", () => {
+  const worker = readFileSync(new URL("../worker/index.ts", import.meta.url), "utf8");
+  assert.match(worker, /runLoggedSync/);
+  assert.match(worker, /sendDeadlineAlerts/);
+  assert.match(worker, /ctx\.waitUntil/);
+});

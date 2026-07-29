@@ -18,6 +18,11 @@ Fantasy SV is a full-season Premier League fantasy football game powered by live
 - One free transfer per gameweek, bankable up to five, then four points per extra transfer
 - Wildcard, Free Hit, Bench Boost and Triple Captain in each half-season
 - Overall ranking, gameweek history and private classic mini-leagues
+- Dedicated team, transfer, league and ranking workspaces
+- Player-by-player gameweek point breakdowns
+- Audited administration for syncs, recalculation and manual point corrections
+- Tester FAQ, rule changelog and an integrated feedback inbox
+- Configurable deadline reminders by email and Discord
 - Email/password accounts, with optional Discord OAuth
 - A user preference between Soccerverse's standard data and the El Rincón community pack
 - Server-side squad persistence for signed-in players and a local draft for visitors
@@ -52,6 +57,8 @@ npm run deploy
 
 The Worker runs a scheduled Soccerverse synchronization every 15 minutes. It refreshes the calendar, imports completed match statistics and settles fantasy scores.
 
+The first account present when migration `0002_beta_operations.sql` is applied becomes the initial administrator. Further administrators should be promoted explicitly in D1.
+
 To enable Discord, create an OAuth application with this redirect URL:
 
 ```text
@@ -59,6 +66,16 @@ https://fantasy-sv.flobl.workers.dev/api/auth/callback/discord
 ```
 
 Then add `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` with `wrangler secret put`.
+
+Deadline reminders use separate provider credentials:
+
+```bash
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put ALERT_FROM_EMAIL
+npx wrangler secret put DISCORD_BOT_TOKEN
+```
+
+`ALERT_FROM_EMAIL` must be a sender verified by Resend. The Discord bot must be able to open direct messages with the linked users. Without these optional credentials, reminder preferences and the in-app countdown continue to work, while external delivery is skipped safely.
 
 ## Contributing
 

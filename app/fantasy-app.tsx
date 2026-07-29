@@ -73,7 +73,9 @@ function PlayerStatus({ player }: { player: FantasyPlayer }) {
   );
 }
 
-export function FantasyApp() {
+export type FantasyView = "home" | "team" | "transfers" | "leagues" | "rankings";
+
+export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
   const { t, locale } = useI18n();
   const [market, setMarket] = useState<LeagueMarket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -230,7 +232,7 @@ export function FantasyApp() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell view-${view}`}>
       <header className="site-header">
         <a className="brand logo-brand" href="#top" aria-label={t("Fantasy SV home")}>
           <Image
@@ -243,10 +245,11 @@ export function FantasyApp() {
           />
         </a>
         <nav aria-label={t("Main navigation")}>
-          <a href="#saison">{t("Season")}</a>
-          <a href="#equipe">{t("My team")}</a>
-          <a href="#ligues">{t("Leagues")}</a>
-          <a href="#regles">{t("Rules")}</a>
+          <a href="/team">{t("My team")}</a>
+          <a href="/transfers">{t("Transfers")}</a>
+          <a href="/rankings">{t("Rankings")}</a>
+          <a href="/leagues">{t("Leagues")}</a>
+          <a href="/help">{t("Help")}</a>
         </nav>
         <AccountControls datapackMode={datapackMode} onDatapackModeChange={updateDatapackMode} />
       </header>
@@ -293,6 +296,7 @@ export function FantasyApp() {
         complete={complete}
         onSquadReplace={replaceSquad}
         onTeamStatus={setRegistered}
+        view={view}
       />
 
       <section className="builder" id="equipe">
@@ -565,6 +569,7 @@ export function FantasyApp() {
         <a href="https://soccerverse.com/developers/datacentre-rest-api" target="_blank" rel="noreferrer">
           {t("API documentation")}
         </a>
+        <a href="/help">{t("Help and feedback")}</a>
       </footer>
     </main>
   );
