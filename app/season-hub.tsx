@@ -40,6 +40,7 @@ type TeamPayload = {
 };
 
 type LeagueSummary = { id: string; name: string; code: string; type: string; memberCount: number };
+type LeagueStanding = { managerName: string; teamName: string; totalPoints: number; overallRank: number | null; played: number };
 
 function formatDeadline(seconds: number, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -91,6 +92,7 @@ export function SeasonHub({
   const [leagues, setLeagues] = useState<LeagueSummary[]>([]);
   const [leagueName, setLeagueName] = useState("");
   const [leagueCode, setLeagueCode] = useState("");
+  const [leagueTable, setLeagueTable] = useState<{ name: string; standings: LeagueStanding[] } | null>(null);
   const userId = session?.user.id;
 
   const loadTeam = useCallback(async () => {
@@ -285,6 +287,20 @@ export function SeasonHub({
     }
   }
 
+  async function openLeague(league: LeagueSummary) {
+    setPending(true);
+    try {
+      const response = await fetch(`/api/fantasy/leagues/${league.id}`, { cache: "no-store" });
+      const payload = await response.json() as { standings?: LeagueStanding[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || t("League table unavailable."));
+      setLeagueTable({ name: league.name, standings: payload.standings || [] });
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : t("League table unavailable."));
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <section className="season-hub" id="saison">
       <div className="season-command">
@@ -419,9 +435,25 @@ export function SeasonHub({
           <section className="management-card" id="ligues">
             <div className="hub-card-heading"><div><span>{t("Community")}</span><h3>{t("Private leagues")}</h3></div><UsersThree size={23} /></div>
             <div className="league-list">
-              {leagues.map((league) => <div key={league.id}><strong>{league.name}</strong><span>{league.memberCount} · {league.code}</span></div>)}
+              {leagues.map((league) => (
+                <button type="button" key={league.id} disabled={pending} onClick={() => void openLeague(league)}>
+                  <strong>{league.name}</strong><span>{league.memberCount} · {league.code}</span>
+                </button>
+              ))}
               {!leagues.length && <p>{t("Create a league and invite your friends with a code.")}</p>}
             </div>
+            {leagueTable && (
+              <div className="mini-table">
+                <strong>{leagueTable.name}</strong>
+                {leagueTable.standings.map((standing, index) => (
+                  <div key={`${standing.managerName}:${standing.teamName}`}>
+                    <b>{index + 1}</b>
+                    <span>{standing.teamName}<small>{standing.managerName}</small></span>
+                    <strong>{standing.totalPoints}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="league-actions">
               <input value={leagueName} onChange={(event) => setLeagueName(event.target.value)} placeholder={t("League name")} maxLength={48} />
               <button type="button" disabled={pending || leagueName.trim().length < 3} onClick={() => void updateLeague("create")}>{t("Create")}</button>

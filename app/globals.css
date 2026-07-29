@@ -372,7 +372,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .management-card > .hub-primary { width: 100%; margin-top: 10px; }
 .league-list, .score-history { display: grid; gap: 7px; margin-bottom: 12px; }
-.league-list > div, .score-history > div {
+.league-list > button, .score-history > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -382,7 +382,37 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: var(--surface-2);
   font-size: 9px;
 }
-.league-list > div span, .score-history small { color: var(--muted); font-family: var(--font-geist-mono); font-size: 8px; }
+.league-list > button {
+  width: 100%;
+  border: 0;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.league-list > button:hover { background: var(--accent-soft); }
+.league-list > button:disabled { opacity: .55; cursor: wait; }
+.league-list > button span, .score-history small { color: var(--muted); font-family: var(--font-geist-mono); font-size: 8px; }
+.mini-table {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.mini-table > strong { margin-bottom: 4px; font-size: 10px; }
+.mini-table > div {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 9px;
+}
+.mini-table b { color: var(--accent); }
+.mini-table span { display: grid; }
+.mini-table small { color: var(--muted); font-size: 7px; }
 .league-actions { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
 .league-actions button {
   padding: 0 12px;
