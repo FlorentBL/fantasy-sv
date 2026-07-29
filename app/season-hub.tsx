@@ -614,7 +614,7 @@ export function SeasonHub({
                 <details key={row.playerId}>
                   <summary>
                     <b>{index + 1}</b>
-                    <span>{player?.name || `#${row.playerId}`}<small>{player?.clubName || ""} · {row.minutes} min</small>{player && <a className={extraStyles.pointProfile} href={`/players/${player.id}`}>Voir la fiche</a>}</span>
+                    <span>{player?.name || `#${row.playerId}`}<small>{player?.clubName || ""} · {row.minutes} min</small>{player && <a className={extraStyles.pointProfile} href={`/players/${player.id}`}>{t("Player profile")}</a>}</span>
                     <strong>{row.points} pts</strong>
                   </summary>
                   <div>
