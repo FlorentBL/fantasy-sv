@@ -35,6 +35,8 @@ export type FantasyPlayer = {
   clubName: string;
   standardClubName: string;
   clubLogoUrl: string;
+  playerImageUrl: string;
+  standardPlayerImageUrl: string;
   name: string;
   standardName: string;
   position: FantasyPosition;

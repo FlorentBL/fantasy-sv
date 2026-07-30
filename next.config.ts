@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "elrincondeldt.com",
-        pathname: "/sv/photos/teams/**",
+        pathname: "/sv/photos/**",
       },
     ],
   },

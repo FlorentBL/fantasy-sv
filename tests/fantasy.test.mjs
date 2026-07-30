@@ -40,6 +40,8 @@ function player(id, position, price = 5, clubId = id) {
     clubId,
     clubName: `Club ${clubId}`,
     clubLogoUrl: "",
+    playerImageUrl: "",
+    standardPlayerImageUrl: "",
     name: `Player ${id}`,
     position,
     sourcePosition: position,

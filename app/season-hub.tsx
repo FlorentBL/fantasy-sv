@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   ArrowsLeftRight,
   CalendarDots,
@@ -13,6 +14,7 @@ import {
   Trophy,
   UsersThree,
 } from "@phosphor-icons/react";
+import type { SyntheticEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { FantasyPlayer, LeagueMarket } from "@/lib/fantasy";
@@ -63,6 +65,60 @@ type PlayerPointRow = {
 };
 type TransferPair = { playerOutId: number; playerInId: number };
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function hideBrokenImage(event: SyntheticEvent<HTMLImageElement>) {
+  event.currentTarget.style.display = "none";
+}
+
+function PlayerPortrait({ player }: { player: FantasyPlayer }) {
+  return (
+    <span className="player-portrait" aria-hidden="true">
+      <span>{initials(player.name)}</span>
+      <Image
+        src={player.playerImageUrl}
+        alt=""
+        width={96}
+        height={96}
+        onError={(event) => {
+          if (event.currentTarget.dataset.fallback !== "used" && player.playerImageUrl !== player.standardPlayerImageUrl) {
+            event.currentTarget.dataset.fallback = "used";
+            event.currentTarget.src = player.standardPlayerImageUrl;
+            return;
+          }
+          hideBrokenImage(event);
+        }}
+      />
+    </span>
+  );
+}
+
+function ClubBadge({ player, enabled }: { player: FantasyPlayer; enabled: boolean }) {
+  const shortName = player.clubName.slice(0, 3).toUpperCase();
+  return (
+    <span className="lineup-club-badge" aria-hidden="true">
+      <span>{shortName}</span>
+      {enabled && (
+        <Image
+          src={player.clubLogoUrl}
+          alt=""
+          width={30}
+          height={30}
+          onError={hideBrokenImage}
+        />
+      )}
+    </span>
+  );
+}
+
 function formatDeadline(seconds: number, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
@@ -91,6 +147,7 @@ export function SeasonHub({
   market,
   squad,
   complete,
+  communityAssets,
   onSquadReplace,
   onTeamStatus,
   view,
@@ -98,6 +155,7 @@ export function SeasonHub({
   market: LeagueMarket | null;
   squad: FantasyPlayer[];
   complete: boolean;
+  communityAssets: boolean;
   onSquadReplace: (ids: number[]) => void;
   onTeamStatus: (registered: boolean) => void;
   view: FantasyView;
@@ -460,14 +518,19 @@ export function SeasonHub({
                   <div className={`lineup-row lineup-${position.toLowerCase()}`} key={position}>
                     {starters.filter((entry) => entry.player.position === position).map(({ selection, player }) => (
                       <article className={swapId === player.id ? "lineup-player active" : "lineup-player"} key={player.id}>
-                        <button type="button" onClick={() => selectForSwap(player.id)}>
-                          <span>{player.clubName.slice(0, 3).toUpperCase()}</span>
-                          <strong>{player.name.split(" ").at(-1)}</strong>
-                          <small>{player.price.toFixed(1)}</small>
+                        <button className="lineup-player-card" type="button" onClick={() => selectForSwap(player.id)}>
+                          <span className="lineup-player-visual">
+                            <PlayerPortrait player={player} />
+                            <ClubBadge player={player} enabled={communityAssets} />
+                          </span>
+                          <span className="lineup-player-copy">
+                            <strong>{player.name.split(" ").at(-1)}</strong>
+                            <small>{player.position} | {player.price.toFixed(1)} cr</small>
+                          </span>
                         </button>
-                        <div>
-                          <button className={selection.isCaptain ? "role active" : "role"} type="button" onClick={() => setRole(player.id, "captain")}>C</button>
-                          <button className={selection.isViceCaptain ? "role active" : "role"} type="button" onClick={() => setRole(player.id, "vice")}>V</button>
+                        <div className="lineup-roles">
+                          <button aria-label={`${player.name}, ${t("Captain")}`} className={selection.isCaptain ? "role active" : "role"} type="button" onClick={() => setRole(player.id, "captain")}>C</button>
+                          <button aria-label={`${player.name}, ${t("Vice-captain")}`} className={selection.isViceCaptain ? "role active" : "role"} type="button" onClick={() => setRole(player.id, "vice")}>V</button>
                         </div>
                       </article>
                     ))}
@@ -478,7 +541,15 @@ export function SeasonHub({
                 <span>{t("Bench")}</span>
                 {bench.map(({ selection, player }) => (
                   <button className={swapId === player.id ? "bench-player active" : "bench-player"} type="button" key={player.id} onClick={() => selectForSwap(player.id)}>
-                    <small>{selection.benchOrder}</small><strong>{player.name.split(" ").at(-1)}</strong><span>{player.position}</span>
+                    <span className="bench-player-media">
+                      <span className="bench-order">{selection.benchOrder}</span>
+                      <PlayerPortrait player={player} />
+                      <ClubBadge player={player} enabled={communityAssets} />
+                    </span>
+                    <span className="bench-player-copy">
+                      <strong>{player.name.split(" ").at(-1)}</strong>
+                      <small>{player.position} | {player.price.toFixed(1)} cr</small>
+                    </span>
                   </button>
                 ))}
               </div>

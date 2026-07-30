@@ -141,6 +141,7 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
         ...player,
         name: player.standardName,
         clubName: player.standardClubName,
+        playerImageUrl: player.standardPlayerImageUrl,
       })),
     };
   }, [datapackMode, market]);
@@ -284,6 +285,7 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
         market={displayMarket}
         squad={squad}
         complete={complete}
+        communityAssets={datapackMode === "community"}
         onSquadReplace={replaceSquad}
         onTeamStatus={setRegistered}
         view={view}

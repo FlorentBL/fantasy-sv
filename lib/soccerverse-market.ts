@@ -11,6 +11,8 @@ import datapackOverrides from "@/lib/datapack-overrides.json";
 const API_BASE = "https://services.soccerverse.com/api";
 const DATAPACK_URL = "https://downloads.soccerverse.com/svpack/packv2/default.json";
 const CLUB_LOGO_BASE = "https://elrincondeldt.com/sv/photos/teams/";
+const COMMUNITY_PLAYER_IMAGE_BASE = "https://elrincondeldt.com/sv/photos/players/";
+const STANDARD_PLAYER_IMAGE_BASE = "https://downloads.soccerverse.com/svpack/packv2/player_webp/";
 const REQUEST_TIMEOUT_MS = 14_000;
 const MARKET_CACHE_MS = 60 * 60 * 1000;
 const SOCCERVERSE_TOP_DIVISION = 0;
@@ -207,6 +209,8 @@ async function createMarket(leagueCode: LeagueCode): Promise<LeagueMarket> {
       || datapack.communityClubs.get(source.activeClubId)
       || `Club ${source.activeClubId}`,
     clubLogoUrl: `${CLUB_LOGO_BASE}${source.activeClubId}.png`,
+    playerImageUrl: `${COMMUNITY_PLAYER_IMAGE_BASE}${source.player_id}.png`,
+    standardPlayerImageUrl: `${STANDARD_PLAYER_IMAGE_BASE}${source.player_id}.webp`,
     name: datapack.communityNames.get(source.player_id) || `Joueur ${source.player_id}`,
     standardName: datapack.standardNames.get(source.player_id)
       || datapack.communityNames.get(source.player_id)

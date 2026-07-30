@@ -329,6 +329,8 @@ const translations: Record<string, TranslationRow> = {
   "My gameweek": ["Ma journée", "La mia giornata", "Mi jornada", "Mein Spieltag", "A minha jornada"],
   "Starting XI": ["Onze titulaire", "Undici titolare", "Once titular", "Startelf", "Onze inicial"],
   "Tap two players to swap": ["Touche deux joueurs pour les permuter", "Tocca due giocatori per scambiarli", "Pulsa dos jugadores para cambiarlos", "Tippe zwei Spieler zum Tauschen", "Toca em dois jogadores para trocar"],
+  "Captain": ["Capitaine", "Capitano", "Capitán", "Kapitän", "Capitão"],
+  "Vice-captain": ["Vice-capitaine", "Vice-capitano", "Vicecapitán", "Vizekapitän", "Vice-capitão"],
   "Formation": ["Formation", "Modulo", "Formación", "Formation", "Formação"],
   "Choose a formation": ["Choisir une formation", "Scegli un modulo", "Elige una formación", "Formation wählen", "Escolher uma formação"],
   "Choose a formation, then tap two players to fine-tune your eleven.": [
