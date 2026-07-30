@@ -21,8 +21,11 @@ import {
 } from "../lib/soccerverse-scoring.ts";
 import {
   DEFENSIVE_CONTRIBUTION_THRESHOLDS,
+  FANTASY_FORMATIONS,
+  applyFormation,
   allocateBonusPoints,
   calculateSvBps,
+  currentFormation,
   defaultLineup,
   scorePlayer,
   sellingPrice,
@@ -185,6 +188,28 @@ test("recognizes a valid complete 15-player squad", () => {
   assert.equal(lineup.filter((item) => item.isCaptain).length, 1);
   assert.equal(lineup.filter((item) => item.isViceCaptain).length, 1);
   assert.doesNotThrow(() => validateLineup(lineup, squad));
+});
+
+test("offers every valid formation and keeps a legal eleven", () => {
+  const squad = [
+    player(1, "GK"), player(2, "GK"),
+    player(3, "DEF"), player(4, "DEF"), player(5, "DEF"), player(6, "DEF"), player(7, "DEF"),
+    player(8, "MID"), player(9, "MID"), player(10, "MID"), player(11, "MID"), player(12, "MID"),
+    player(13, "FWD"), player(14, "FWD"), player(15, "FWD"),
+  ];
+  let lineup = defaultLineup(squad);
+  assert.equal(currentFormation(lineup, squad), "3-4-3");
+  for (const formation of FANTASY_FORMATIONS) {
+    lineup = applyFormation(lineup, squad, formation.name);
+    assert.equal(currentFormation(lineup, squad), formation.name);
+    assert.deepEqual(
+      lineup.filter((item) => !item.isStarter).map((item) => item.benchOrder).sort(),
+      [1, 2, 3, 4],
+    );
+    assert.equal(lineup.filter((item) => item.isCaptain && item.isStarter).length, 1);
+    assert.equal(lineup.filter((item) => item.isViceCaptain && item.isStarter).length, 1);
+    assert.doesNotThrow(() => validateLineup(lineup, squad));
+  }
 });
 
 test("prices a multi-transfer batch after free transfers", () => {

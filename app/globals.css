@@ -173,6 +173,53 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .hub-card-heading > small,
 .hub-card-heading > svg { color: var(--muted); font-size: 9px; }
+.formation-selector {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.formation-selector > div:first-child {
+  min-width: 72px;
+  display: grid;
+  gap: 2px;
+}
+.formation-selector > div:first-child span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.formation-selector > div:first-child strong { font-size: 17px; letter-spacing: -.04em; }
+.formation-options {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(48px, 1fr));
+  gap: 5px;
+}
+.formation-options button {
+  min-height: 34px;
+  padding: 0 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 820;
+  cursor: pointer;
+}
+.formation-options button:hover { border-color: var(--accent); color: var(--accent); }
+.formation-options button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(34, 96, 212, .2);
+}
 .lineup-pitch {
   min-height: 500px;
   position: relative;
@@ -912,6 +959,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .bench-strip > span { grid-column: 1 / -1; writing-mode: initial; transform: none; }
   .hub-sidebar, .management-grid { grid-template-columns: 1fr; }
   .history-card { grid-column: auto; }
+}
+
+@media (max-width: 700px) {
+  .formation-selector { grid-template-columns: 1fr; gap: 8px; }
+  .formation-selector > div:first-child { display: flex; align-items: baseline; justify-content: space-between; }
+  .formation-options { grid-template-columns: repeat(4, 1fr); }
 }
 
 .site-header {

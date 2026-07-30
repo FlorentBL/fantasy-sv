@@ -16,7 +16,16 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { FantasyPlayer, LeagueMarket } from "@/lib/fantasy";
-import { defaultLineup, STARTER_LIMITS, type ChipType, type LineupSelection } from "@/lib/fantasy-rules";
+import {
+  applyFormation,
+  currentFormation,
+  defaultLineup,
+  FANTASY_FORMATIONS,
+  STARTER_LIMITS,
+  type ChipType,
+  type FantasyFormation,
+  type LineupSelection,
+} from "@/lib/fantasy-rules";
 import { sellingPrice } from "@/lib/fantasy-rules";
 import { useI18n } from "@/lib/i18n";
 import type { FantasyView } from "@/app/fantasy-app";
@@ -196,6 +205,7 @@ export function SeasonHub({
   const starters = lineupPlayers.filter((entry) => entry.selection.isStarter);
   const bench = lineupPlayers.filter((entry) => !entry.selection.isStarter)
     .sort((a, b) => (a.selection.benchOrder || 0) - (b.selection.benchOrder || 0));
+  const activeFormation = currentFormation(lineup, squad);
   const outgoing = playerById.get(Number(transferOut));
   const basketOutIds = transferBasket.map((item) => item.playerOutId);
   const basketInIds = transferBasket.map((item) => item.playerInId);
@@ -291,6 +301,12 @@ export function SeasonHub({
     }
     setLineup(next);
     setSwapId(null);
+  }
+
+  function chooseFormation(formation: FantasyFormation) {
+    setLineup((items) => applyFormation(items, squad, formation));
+    setSwapId(null);
+    setNotice(t("Formation {formation} selected. Save your team to confirm.", { formation }));
   }
 
   function setRole(playerId: number, role: "captain" | "vice") {
@@ -416,10 +432,29 @@ export function SeasonHub({
         <section className="lineup-card">
           <div className="hub-card-heading">
             <div><span>{t("My gameweek")}</span><h3>{t("Starting XI")}</h3></div>
-            <small>{t("Tap two players to swap")}</small>
+            <small>{t("Choose a formation, then tap two players to fine-tune your eleven.")}</small>
           </div>
           {lineupPlayers.length ? (
             <>
+              <div className="formation-selector">
+                <div>
+                  <span>{t("Formation")}</span>
+                  <strong>{activeFormation || "—"}</strong>
+                </div>
+                <div className="formation-options" role="group" aria-label={t("Choose a formation")}>
+                  {FANTASY_FORMATIONS.map((formation) => (
+                    <button
+                      aria-pressed={activeFormation === formation.name}
+                      className={activeFormation === formation.name ? "active" : ""}
+                      key={formation.name}
+                      onClick={() => chooseFormation(formation.name)}
+                      type="button"
+                    >
+                      {formation.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="lineup-pitch">
                 {(["GK", "DEF", "MID", "FWD"] as const).map((position) => (
                   <div className={`lineup-row lineup-${position.toLowerCase()}`} key={position}>

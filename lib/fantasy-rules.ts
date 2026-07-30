@@ -13,6 +13,18 @@ export const STARTER_LIMITS = {
   FWD: { min: 1, max: 3 },
 } satisfies Record<FantasyPosition, { min: number; max: number }>;
 
+export const FANTASY_FORMATIONS = [
+  { name: "3-4-3", GK: 1, DEF: 3, MID: 4, FWD: 3 },
+  { name: "3-5-2", GK: 1, DEF: 3, MID: 5, FWD: 2 },
+  { name: "4-3-3", GK: 1, DEF: 4, MID: 3, FWD: 3 },
+  { name: "4-4-2", GK: 1, DEF: 4, MID: 4, FWD: 2 },
+  { name: "4-5-1", GK: 1, DEF: 4, MID: 5, FWD: 1 },
+  { name: "5-2-3", GK: 1, DEF: 5, MID: 2, FWD: 3 },
+  { name: "5-3-2", GK: 1, DEF: 5, MID: 3, FWD: 2 },
+  { name: "5-4-1", GK: 1, DEF: 5, MID: 4, FWD: 1 },
+] as const;
+export type FantasyFormation = typeof FANTASY_FORMATIONS[number]["name"];
+
 export const CHIP_TYPES = ["wildcard", "free_hit", "bench_boost", "triple_captain"] as const;
 export type ChipType = typeof CHIP_TYPES[number];
 
@@ -112,6 +124,64 @@ export function defaultLineup(players: FantasyPlayer[]): LineupSelection[] {
     benchOrder: starterIds.has(player.id) ? null : bench.findIndex((item) => item.id === player.id) + 1,
     isCaptain: player.id === captain?.id,
     isViceCaptain: player.id === vice?.id,
+  }));
+}
+
+export function currentFormation(lineup: LineupSelection[], players: FantasyPlayer[]): FantasyFormation | null {
+  const positionById = new Map(players.map((player) => [player.id, player.position]));
+  const counts = lineup.filter((item) => item.isStarter).reduce((result, item) => {
+    const position = positionById.get(item.playerId);
+    if (position) result[position] += 1;
+    return result;
+  }, { GK: 0, DEF: 0, MID: 0, FWD: 0 } satisfies Record<FantasyPosition, number>);
+  return FANTASY_FORMATIONS.find((formation) =>
+    formation.GK === counts.GK
+    && formation.DEF === counts.DEF
+    && formation.MID === counts.MID
+    && formation.FWD === counts.FWD)?.name || null;
+}
+
+export function applyFormation(
+  lineup: LineupSelection[],
+  players: FantasyPlayer[],
+  formationName: FantasyFormation,
+): LineupSelection[] {
+  const formation = FANTASY_FORMATIONS.find((item) => item.name === formationName);
+  if (!formation || lineup.length !== 15) return lineup;
+  const selectionById = new Map(lineup.map((item) => [item.playerId, item]));
+  const orderedPlayers = [...players].sort((a, b) => {
+    const aSelection = selectionById.get(a.id);
+    const bSelection = selectionById.get(b.id);
+    if (Boolean(aSelection?.isStarter) !== Boolean(bSelection?.isStarter)) return aSelection?.isStarter ? -1 : 1;
+    return (aSelection?.benchOrder || aSelection?.slot || 99) - (bSelection?.benchOrder || bSelection?.slot || 99);
+  });
+  const starterIds = new Set<number>();
+  for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
+    orderedPlayers.filter((player) => player.position === position)
+      .slice(0, formation[position])
+      .forEach((player) => starterIds.add(player.id));
+  }
+  const bench = orderedPlayers.filter((player) => !starterIds.has(player.id))
+    .sort((a, b) => {
+      if ((a.position === "GK") !== (b.position === "GK")) return a.position === "GK" ? -1 : 1;
+      const aSelection = selectionById.get(a.id);
+      const bSelection = selectionById.get(b.id);
+      return (aSelection?.benchOrder || aSelection?.slot || 99) - (bSelection?.benchOrder || bSelection?.slot || 99);
+    });
+  const benchOrderById = new Map(bench.map((player, index) => [player.id, index + 1]));
+  const currentCaptain = lineup.find((item) => item.isCaptain && starterIds.has(item.playerId))?.playerId;
+  const currentVice = lineup.find((item) =>
+    item.isViceCaptain && starterIds.has(item.playerId) && item.playerId !== currentCaptain)?.playerId;
+  const captainCandidates = players.filter((player) => starterIds.has(player.id)).sort((a, b) => b.price - a.price);
+  const captainId = currentCaptain || captainCandidates[0]?.id;
+  const viceId = currentVice || captainCandidates.find((player) => player.id !== captainId)?.id;
+
+  return lineup.map((item) => ({
+    ...item,
+    isStarter: starterIds.has(item.playerId),
+    benchOrder: starterIds.has(item.playerId) ? null : benchOrderById.get(item.playerId) || null,
+    isCaptain: item.playerId === captainId,
+    isViceCaptain: item.playerId === viceId,
   }));
 }
 
