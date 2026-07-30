@@ -57,6 +57,13 @@ test("offers the Under the Lights languages plus Portuguese", () => {
   assert.match(i18nSource, /document\.documentElement\.lang = language/);
 });
 
+test("localizes the countdown day abbreviation", () => {
+  const i18nSource = readFileSync(new URL("../lib/i18n.tsx", import.meta.url), "utf8");
+  const seasonHubSource = readFileSync(new URL("../app/season-hub.tsx", import.meta.url), "utf8");
+  assert.match(i18nSource, /"d": \["j", "g", "d", "T", "d"\]/);
+  assert.match(seasonHubSource, /secondsRemaining\(gameweek\.deadlineAt, t\("d"\)\)/);
+});
+
 test("queries Soccerverse division zero for the English top flight", () => {
   const marketSource = readFileSync(new URL("../lib/soccerverse-market.ts", import.meta.url), "utf8");
   const appSource = readFileSync(new URL("../app/fantasy-app.tsx", import.meta.url), "utf8");

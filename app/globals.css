@@ -961,12 +961,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   min-height: 40px;
   display: inline-flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 10px;
   border-radius: var(--control-radius);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 760;
   text-decoration: none;
+  white-space: nowrap;
   transition: color .22s ease, background .22s ease, transform .22s ease;
 }
 .site-header nav a:hover, .header-link:hover {
@@ -1274,22 +1275,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   text-decoration: none;
 }
 
+.help-page {
+  min-height: 100dvh;
+  background:
+    linear-gradient(135deg, rgba(36, 86, 216, .035) 0 1px, transparent 1px 46px),
+    var(--bg);
+  background-size: 46px 46px, auto;
+}
 .help-shell {
   min-height: 100dvh;
   padding: 0 max(20px, calc((100vw - 1180px) / 2)) 80px;
-  background: var(--bg);
+  background: transparent;
 }
-.help-shell > header {
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-}
-.help-shell > header img { width: 150px; height: auto; }
-.help-shell > header nav { display: flex; gap: 5px; }
-.help-shell > header nav a { padding: 9px 11px; border-radius: 8px; color: var(--muted); font-size: 9px; font-weight: 760; text-decoration: none; }
-.help-shell > header nav a:hover { background: var(--surface-2); color: var(--ink); }
 .help-hero { padding: 50px 0 30px; }
 .help-hero > span, .help-card > div > span {
   color: var(--accent);

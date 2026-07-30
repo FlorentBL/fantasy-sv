@@ -1,11 +1,10 @@
 "use client";
 
 import { Bell, Bug, Check, PaperPlaneTilt, Question, Scroll } from "@phosphor-icons/react";
-import Image from "next/image";
-import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useI18n } from "@/lib/i18n";
+import { FeatureHeader } from "@/app/feature-header";
 import { ScoreCalculator } from "@/app/help/score-calculator";
 
 type Notifications = {
@@ -85,11 +84,9 @@ export function BetaHelp() {
   }
 
   return (
-    <main className="help-shell">
-      <header>
-        <Link href="/"><Image src="/fantasy-sv-logo.png" alt="Fantasy SV" width={190} height={80} /></Link>
-        <nav><Link href="/team">{t("My team")}</Link><Link href="/rankings">{t("Rankings")}</Link><Link href="/">{t("Home")}</Link></nav>
-      </header>
+    <div className="help-page">
+      <FeatureHeader />
+      <main className="help-shell">
       <section className="help-hero">
         <span>{t("Private beta")}</span>
         <h1>{t("Rules, alerts and support.")}</h1>
@@ -135,6 +132,7 @@ export function BetaHelp() {
         </section>
       </div>
       {notice && <p className="help-notice">{notice}</p>}
-    </main>
+      </main>
+    </div>
   );
 }

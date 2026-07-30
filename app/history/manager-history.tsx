@@ -1,5 +1,6 @@
 "use client";
 
+import { Trophy } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { FeatureHeader } from "@/app/feature-header";
 import styles from "@/app/feature-pages.module.css";
@@ -61,7 +62,7 @@ export function ManagerHistory() {
           <section className={styles.panel}>
             <h2>{t("Honours")}</h2>
             <div className={styles.honours}>
-              {data.honours.map((honour) => <div className={styles.seasonRow} key={honour.id}><b>🏆</b><span><strong>{honour.title}</strong><br /><small>{honour.seasonName} · {honour.type === "cup" ? "Coupe" : "Mini-ligue"}</small></span></div>)}
+              {data.honours.map((honour) => <div className={styles.seasonRow} key={honour.id}><Trophy size={22} weight="duotone" /><span><strong>{honour.title}</strong><br /><small>{honour.seasonName} · {honour.type === "cup" ? t("Cup") : t("Mini-league")}</small></span></div>)}
               {!data.honours.length && <div className={styles.empty}>{t("Your first mini-league or cup title will appear here.")}</div>}
             </div>
           </section>

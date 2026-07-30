@@ -18,7 +18,7 @@ import {
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AccountControls } from "@/app/account-controls";
+import { FeatureHeader } from "@/app/feature-header";
 import { SeasonHub } from "@/app/season-hub";
 import extraStyles from "@/app/season-extras.module.css";
 import {
@@ -235,28 +235,7 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
 
   return (
     <main className={`app-shell view-${view}`}>
-      <header className="site-header">
-        <a className="brand logo-brand" href="#top" aria-label={t("Fantasy SV home")}>
-          <Image
-            className="brand-logo"
-            src="/fantasy-sv-logo.png"
-            alt="Fantasy SV"
-            width={384}
-            height={160}
-            priority
-          />
-        </a>
-        <nav aria-label={t("Main navigation")}>
-          <a href="/team">{t("My team")}</a>
-          <a href="/planner">{t("Planner")}</a>
-          <a href="/transfers">{t("Transfers")}</a>
-          <a href="/rankings">{t("Rankings")}</a>
-          <a href="/leagues">{t("Leagues")}</a>
-          <a href="/history">{t("History")}</a>
-          <a href="/help">{t("Help")}</a>
-        </nav>
-        <AccountControls datapackMode={datapackMode} onDatapackModeChange={updateDatapackMode} />
-      </header>
+      <FeatureHeader datapackMode={datapackMode} onDatapackModeChange={updateDatapackMode} />
 
       <section className="hero" id="top">
         <div className="hero-scrim" />

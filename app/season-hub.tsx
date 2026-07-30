@@ -60,12 +60,12 @@ function formatDeadline(seconds: number, locale: string) {
   }).format(new Date(seconds * 1000));
 }
 
-function secondsRemaining(deadline: number) {
+function secondsRemaining(deadline: number, dayUnit: string) {
   const seconds = Math.max(0, deadline - Math.floor(Date.now() / 1000));
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  return `${days}j ${hours}h ${minutes}m`;
+  return `${days}${dayUnit} ${hours}h ${minutes}m`;
 }
 
 function validateStarterSwap(lineup: LineupSelection[], players: FantasyPlayer[]) {
@@ -400,7 +400,7 @@ export function SeasonHub({
           <div>
             <span>{t("Gameweek {gameweek} deadline", { gameweek: currentGameweek })}</span>
             <strong>{gameweek ? formatDeadline(gameweek.deadlineAt, locale) : "—"}</strong>
-            <small>{gameweek ? secondsRemaining(gameweek.deadlineAt) : t("Loading…")}</small>
+            <small>{gameweek ? secondsRemaining(gameweek.deadlineAt, t("d")) : t("Loading…")}</small>
           </div>
         </div>
       </div>
