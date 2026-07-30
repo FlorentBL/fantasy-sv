@@ -940,11 +940,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   text-decoration: none;
 }
 .brand strong { color: var(--accent); }
-.logo-brand { line-height: 0; }
+.logo-brand {
+  gap: 8px;
+  line-height: 0;
+}
 .brand-logo {
   width: 148px;
   height: auto;
   display: block;
+}
+.beta-badge {
+  padding: 4px 6px 3px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 .brand-mark {
   width: 40px;
@@ -2272,7 +2288,7 @@ footer > a:last-child:hover { color: var(--accent-dark); }
 
 @media (max-width: 680px) {
   :root { --header-height: 64px; }
-  .site-header { padding: 0 16px; }
+  .site-header { gap: 8px; padding: 0 16px; }
   .header-actions { gap: 5px; }
   .header-link { display: none; }
   .language-select { min-width: 54px; }
@@ -2284,6 +2300,8 @@ footer > a:last-child:hover { color: var(--accent-dark); }
   .dialog-close { top: 13px; right: 13px; }
   .brand { font-size: 15px; }
   .brand-logo { width: 124px; }
+  .logo-brand { gap: 6px; }
+  .beta-badge { padding: 3px 5px; font-size: 7px; }
   .brand-mark { width: 36px; height: 36px; }
   .hero {
     grid-template-rows: auto 230px;

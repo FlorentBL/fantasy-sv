@@ -38,6 +38,7 @@ export function FeatureHeader({
     <header className="site-header">
       <Link className="brand logo-brand" href="/" aria-label={t("Fantasy SV home")}>
         <Image className="brand-logo" src="/fantasy-sv-logo.png" alt="Fantasy SV" width={384} height={160} priority />
+        <span className="beta-badge">Beta</span>
       </Link>
       <nav aria-label={t("Main navigation")}>
         <Link href="/team">{t("My team")}</Link>
