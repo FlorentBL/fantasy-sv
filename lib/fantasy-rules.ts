@@ -47,6 +47,10 @@ export type MatchPlayerStats = {
   rating: number;
   teamGoalsConceded: number;
   manOfMatch: boolean;
+  penaltyGoals?: number;
+  penaltySaves?: number;
+  penaltyMisses?: number;
+  ownGoals?: number;
 };
 
 export type PointBreakdown = {
@@ -55,10 +59,17 @@ export type PointBreakdown = {
   assists: number;
   cleanSheet: number;
   saves: number;
+  penalties: number;
+  ownGoals: number;
   cards: number;
   goalsConceded: number;
   defensiveContribution: number;
   bonus: number;
+};
+
+export type BonusCandidate = {
+  playerId: number;
+  bps: number;
 };
 
 export function validateSquad(players: FantasyPlayer[]) {
@@ -135,8 +146,10 @@ export function scorePlayer(stats: MatchPlayerStats, bonus = 0) {
     ? stats.position === "GK" || stats.position === "DEF" ? 4 : stats.position === "MID" ? 1 : 0
     : 0;
   const saves = stats.position === "GK" ? Math.floor(stats.saves / 3) : 0;
+  const penalties = (stats.penaltySaves || 0) * 5 - (stats.penaltyMisses || 0) * 2;
+  const ownGoals = stats.ownGoals ? stats.ownGoals * -2 : 0;
   const cards = stats.yellowCards * -1 + (stats.redCards + stats.yellowRedCards) * -3;
-  const goalsConceded = stats.minutes >= 60 && (stats.position === "GK" || stats.position === "DEF")
+  const goalsConceded = stats.position === "GK" || stats.position === "DEF"
     ? stats.teamGoalsConceded >= 2 ? -Math.floor(stats.teamGoalsConceded / 2) : 0
     : 0;
   const defensiveThreshold = DEFENSIVE_CONTRIBUTION_THRESHOLDS[stats.position];
@@ -149,12 +162,59 @@ export function scorePlayer(stats: MatchPlayerStats, bonus = 0) {
     assists,
     cleanSheet,
     saves,
+    penalties,
+    ownGoals,
     cards,
     goalsConceded,
     defensiveContribution,
     bonus,
   };
   return { points: Object.values(breakdown).reduce((sum, value) => sum + value, 0), breakdown };
+}
+
+export function calculateSvBps(stats: MatchPlayerStats) {
+  if (stats.minutes <= 0) return 0;
+  const penaltyGoals = Math.min(stats.goals, Math.max(0, stats.penaltyGoals || 0));
+  const openPlayGoals = Math.max(0, stats.goals - penaltyGoals);
+  const openPlayGoalValue: Record<FantasyPosition, number> = { GK: 12, DEF: 12, MID: 18, FWD: 24 };
+  const appearance = stats.minutes > 60 ? 6 : 3;
+  const goals = penaltyGoals * 12 + openPlayGoals * openPlayGoalValue[stats.position];
+  const assists = stats.assists * 9;
+  const cleanSheet = stats.minutes >= 60
+    && stats.teamGoalsConceded === 0
+    && (stats.position === "GK" || stats.position === "DEF") ? 12 : 0;
+  const saves = stats.position === "GK" ? stats.saves * 2 + (stats.penaltySaves || 0) * 8 : 0;
+  const creation = stats.keyPasses;
+  const defending = stats.keyTackles * 2;
+  const discipline = stats.yellowCards * -3
+    + (stats.redCards + stats.yellowRedCards) * -9
+    + (stats.penaltyMisses || 0) * -6
+    + (stats.ownGoals || 0) * -6;
+  const conceded = stats.position === "GK" || stats.position === "DEF"
+    ? stats.teamGoalsConceded * -4
+    : 0;
+  const soccerversePerformance = Math.max(0, stats.rating) * 3;
+  return appearance + goals + assists + cleanSheet + saves + creation + defending
+    + discipline + conceded + soccerversePerformance;
+}
+
+export function allocateBonusPoints(candidates: BonusCandidate[]) {
+  const ranked = [...candidates]
+    .filter((candidate) => Number.isFinite(candidate.bps))
+    .sort((a, b) => b.bps - a.bps || a.playerId - b.playerId);
+  const bonusByPlayer = new Map<number, number>();
+  let rankIndex = 0;
+  while (rankIndex < ranked.length && rankIndex < 3) {
+    const score = ranked[rankIndex].bps;
+    let groupEnd = rankIndex + 1;
+    while (groupEnd < ranked.length && ranked[groupEnd].bps === score) groupEnd += 1;
+    const bonus = 3 - rankIndex;
+    for (let index = rankIndex; index < groupEnd; index += 1) {
+      bonusByPlayer.set(ranked[index].playerId, bonus);
+    }
+    rankIndex = groupEnd;
+  }
+  return bonusByPlayer;
 }
 
 export function sellingPrice(purchasePriceTenths: number, currentPriceTenths: number) {

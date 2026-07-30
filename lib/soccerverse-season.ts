@@ -1,6 +1,19 @@
 import { getLeagueMarket } from "@/lib/soccerverse-market";
-import { scorePlayer, STARTER_LIMITS, type MatchPlayerStats } from "@/lib/fantasy-rules";
+import {
+  allocateBonusPoints,
+  calculateSvBps,
+  scorePlayer,
+  STARTER_LIMITS,
+  type MatchPlayerStats,
+} from "@/lib/fantasy-rules";
 import type { FantasyPosition } from "@/lib/fantasy";
+import {
+  completedGoals,
+  goalsConcededWhilePlaying,
+  specialEventsByPlayer,
+  type SoccerverseCommentaryEvent,
+  type SoccerverseMatchEvent,
+} from "@/lib/soccerverse-scoring";
 
 const GSP_URL = "https://services.soccerverse.com/gsp/";
 const API_BASE = "https://services.soccerverse.com/api";
@@ -24,6 +37,8 @@ type Fixture = {
 type FixturePlayer = {
   team: number;
   player_id: number;
+  time_started: number;
+  time_finished: number;
   minutes_played: number;
   saves: number;
   key_tackles: number;
@@ -195,18 +210,26 @@ export async function settlePlayedGameweeks(db: D1Database, targetGameweek?: num
     const totals = new Map<number, { points: number; minutes: number; breakdown: Record<string, number> }>();
     let complete = fixtures.results.length > 0;
     for (const fixture of fixtures.results) {
-      const players = await rest<FixturePlayer[]>(`/fixture_history/players/${fixture.id}`);
+      const [players, events, commentary] = await Promise.all([
+        rest<FixturePlayer[]>(`/fixture_history/players/${fixture.id}`),
+        rest<SoccerverseMatchEvent[]>(`/commentary/match_events/${fixture.id}`),
+        rest<SoccerverseCommentaryEvent[]>(`/commentary/match_commentary/${fixture.id}`),
+      ]);
       if (players.length === 0) {
         complete = false;
         break;
       }
-      const ranked = [...players].filter((player) => player.minutes_played > 0)
-        .sort((a, b) => Number(b.player_id === fixture.man_of_match) - Number(a.player_id === fixture.man_of_match)
-          || b.rating - a.rating || b.goals - a.goals || b.assists - a.assists);
-      const bonusByPlayer = new Map(ranked.slice(0, 3).map((player, index) => [player.player_id, 3 - index]));
+      const goals = completedGoals(events);
+      if (goals.length !== fixture.home_goals + fixture.away_goals) {
+        complete = false;
+        break;
+      }
+      const specialEvents = specialEventsByPlayer(goals, commentary);
+      const statsByPlayer = new Map<number, MatchPlayerStats>();
       for (const player of players) {
         const position = positionByPlayer.get(player.player_id);
         if (!position) continue;
+        const opponentClubId = player.team === 0 ? fixture.away_club_id : fixture.home_club_id;
         const stats: MatchPlayerStats = {
           playerId: player.player_id,
           position,
@@ -220,9 +243,23 @@ export async function settlePlayedGameweeks(db: D1Database, targetGameweek?: num
           redCards: player.red_cards,
           yellowRedCards: player.yellowred_cards,
           rating: player.rating,
-          teamGoalsConceded: player.team === 0 ? fixture.away_goals : fixture.home_goals,
+          teamGoalsConceded: goalsConcededWhilePlaying(player, opponentClubId, goals),
           manOfMatch: player.player_id === fixture.man_of_match,
+          penaltyGoals: specialEvents.penaltyGoals.get(player.player_id) || 0,
+          penaltySaves: specialEvents.penaltySaves.get(player.player_id) || 0,
+          penaltyMisses: specialEvents.penaltyMisses.get(player.player_id) || 0,
+          ownGoals: specialEvents.ownGoals.get(player.player_id) || 0,
         };
+        statsByPlayer.set(player.player_id, stats);
+      }
+      const bonusByPlayer = allocateBonusPoints(
+        [...statsByPlayer.values()]
+          .filter((stats) => stats.minutes > 0)
+          .map((stats) => ({ playerId: stats.playerId, bps: calculateSvBps(stats) })),
+      );
+      for (const player of players) {
+        const stats = statsByPlayer.get(player.player_id);
+        if (!stats) continue;
         const scored = scorePlayer(stats, bonusByPlayer.get(player.player_id) || 0);
         const previous = totals.get(player.player_id);
         totals.set(player.player_id, {

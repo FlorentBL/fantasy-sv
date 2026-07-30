@@ -525,8 +525,8 @@ export function FantasyApp({ view = "home" }: { view?: FantasyView }) {
           </div>
           <div>
             <Star size={25} weight="duotone" />
-            <strong>{t("Live scoring")}</strong>
-            <p>{t("Minutes, goals, assists, clean sheets, saves, cards, defensive actions and bonus points.")}</p>
+            <strong>{t("Instant scoring")}</strong>
+            <p>{t("Minutes, goals, assists, clean sheets, saves, penalties, cards, own goals, defensive actions and bonus points.")}</p>
           </div>
           <div>
             <Trophy size={25} weight="duotone" />

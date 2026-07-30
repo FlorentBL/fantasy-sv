@@ -16,6 +16,9 @@ type CalculatorStats = {
   goals: number;
   assists: number;
   saves: number;
+  penaltySaves: number;
+  penaltyMisses: number;
+  ownGoals: number;
   keyTackles: number;
   yellowCards: number;
   redCards: number;
@@ -30,6 +33,9 @@ const initialStats: CalculatorStats = {
   goals: 0,
   assists: 0,
   saves: 0,
+  penaltySaves: 0,
+  penaltyMisses: 0,
+  ownGoals: 0,
   keyTackles: 0,
   yellowCards: 0,
   redCards: 0,
@@ -43,6 +49,9 @@ const fields = [
   ["assists", "Assists", 10],
   ["teamGoalsConceded", "Goals conceded", 15],
   ["saves", "Saves", 30],
+  ["penaltySaves", "Penalty saves", 5],
+  ["penaltyMisses", "Penalty misses", 5],
+  ["ownGoals", "Own goals", 5],
   ["keyTackles", "Key tackles", 10],
   ["yellowCards", "Yellow cards", 2],
   ["redCards", "Red cards", 1],
@@ -55,6 +64,8 @@ const breakdownLabels: Record<keyof PointBreakdown, string> = {
   assists: "Assists",
   cleanSheet: "Clean sheet",
   saves: "Saves",
+  penalties: "Penalties",
+  ownGoals: "Own goals",
   cards: "Cards",
   goalsConceded: "Goals conceded",
   defensiveContribution: "Defensive contribution",
@@ -81,6 +92,9 @@ export function ScoreCalculator() {
     position,
     minutes: stats.minutes,
     saves: stats.saves,
+    penaltySaves: stats.penaltySaves,
+    penaltyMisses: stats.penaltyMisses,
+    ownGoals: stats.ownGoals,
     keyTackles: stats.keyTackles,
     keyPasses: 0,
     assists: stats.assists,
@@ -218,7 +232,7 @@ export function ScoreCalculator() {
             {defensiveThreshold === null
               ? t("Goalkeepers do not earn defensive-contribution points.")
               : t("{count} key tackles earn 2 defensive-contribution points for this position.", { count: defensiveThreshold })}
-            {" "}{t("Goals-conceded deductions are calculated automatically.")}
+            {" "}{t("Only goals conceded while the player is on the pitch are counted.")}
           </p>
         </div>
 

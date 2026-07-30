@@ -15,7 +15,14 @@ import {
 import { normalizeDatapackMode, parseDatapackMode } from "../lib/datapack.ts";
 import { clubStrengths, fixtureDifficulty, projectionIndex } from "../lib/fantasy-planner.ts";
 import {
+  completedGoals,
+  goalsConcededWhilePlaying,
+  specialEventsByPlayer,
+} from "../lib/soccerverse-scoring.ts";
+import {
   DEFENSIVE_CONTRIBUTION_THRESHOLDS,
+  allocateBonusPoints,
+  calculateSvBps,
   defaultLineup,
   scorePlayer,
   sellingPrice,
@@ -230,6 +237,8 @@ test("scores Soccerverse match statistics with fantasy rules", () => {
     assists: 3,
     cleanSheet: 4,
     saves: 0,
+    penalties: 0,
+    ownGoals: 0,
     cards: -1,
     goalsConceded: 0,
     defensiveContribution: 2,
@@ -260,6 +269,118 @@ test("calibrates defensive contributions to Soccerverse key tackles", () => {
   assert.equal(scorePlayer({ ...base, position: "FWD", keyTackles: 2 }).breakdown.defensiveContribution, 0);
   assert.equal(scorePlayer({ ...base, position: "FWD", keyTackles: 3 }).breakdown.defensiveContribution, 2);
   assert.equal(scorePlayer({ ...base, position: "GK", keyTackles: 30 }).breakdown.defensiveContribution, 0);
+});
+
+test("scores penalty saves, misses and own goals", () => {
+  const base = {
+    playerId: 1,
+    minutes: 90,
+    saves: 0,
+    keyTackles: 0,
+    keyPasses: 0,
+    assists: 0,
+    goals: 0,
+    yellowCards: 0,
+    redCards: 0,
+    yellowRedCards: 0,
+    rating: 7,
+    teamGoalsConceded: 1,
+    manOfMatch: false,
+  };
+  const keeper = scorePlayer({ ...base, position: "GK", saves: 3, penaltySaves: 1 });
+  assert.equal(keeper.points, 8);
+  assert.equal(keeper.breakdown.saves, 1);
+  assert.equal(keeper.breakdown.penalties, 5);
+  const forward = scorePlayer({ ...base, position: "FWD", penaltyMisses: 1, ownGoals: 1 });
+  assert.equal(forward.points, -2);
+  assert.equal(forward.breakdown.penalties, -2);
+  assert.equal(forward.breakdown.ownGoals, -2);
+  const shortDefender = scorePlayer({ ...base, position: "DEF", minutes: 30, teamGoalsConceded: 2 });
+  assert.equal(shortDefender.breakdown.goalsConceded, -1);
+});
+
+test("calculates transparent SV-BPS and preserves bonus ties", () => {
+  const stats = {
+    playerId: 1,
+    position: "MID",
+    minutes: 90,
+    saves: 0,
+    keyTackles: 2,
+    keyPasses: 2,
+    assists: 1,
+    goals: 1,
+    yellowCards: 1,
+    redCards: 0,
+    yellowRedCards: 0,
+    rating: 8,
+    teamGoalsConceded: 0,
+    manOfMatch: false,
+  };
+  assert.equal(calculateSvBps(stats), 60);
+  assert.equal(calculateSvBps({ ...stats, penaltyGoals: 1 }), 54);
+
+  const tiedFirst = allocateBonusPoints([
+    { playerId: 1, bps: 50 },
+    { playerId: 2, bps: 50 },
+    { playerId: 3, bps: 40 },
+    { playerId: 4, bps: 40 },
+  ]);
+  assert.deepEqual(Object.fromEntries(tiedFirst), { 1: 3, 2: 3, 3: 1, 4: 1 });
+  const tiedSecond = allocateBonusPoints([
+    { playerId: 1, bps: 50 },
+    { playerId: 2, bps: 40 },
+    { playerId: 3, bps: 40 },
+  ]);
+  assert.deepEqual(Object.fromEntries(tiedSecond), { 1: 3, 2: 2, 3: 2 });
+});
+
+test("derives Soccerverse timing, penalties and cancelled goals", () => {
+  const goal = (id, playerId, clubId, time, goalType = "OPEN_PLAY") => ({
+    match_event_id: id,
+    event_type: "GOAL",
+    player_id: playerId,
+    club_id: clubId,
+    time,
+    goal_type: goalType,
+  });
+  const events = [
+    goal(1, 10, 2, 10),
+    goal(2, 11, 2, 40),
+    { ...goal(3, 11, 2, 40, null), event_type: "GOALCANCELLED" },
+    goal(4, 12, 2, 70, "OWN_GOAL"),
+  ];
+  const goals = completedGoals(events);
+  assert.deepEqual(goals.map((event) => event.match_event_id), [1, 4]);
+  assert.equal(goalsConcededWhilePlaying({
+    time_started: 0, time_finished: 65, red_cards: 0, yellowred_cards: 0,
+  }, 2, goals), 1);
+  assert.equal(goalsConcededWhilePlaying({
+    time_started: 11, time_finished: 90, red_cards: 0, yellowred_cards: 0,
+  }, 2, goals), 1);
+  assert.equal(goalsConcededWhilePlaying({
+    time_started: 0, time_finished: 53, red_cards: 1, yellowred_cards: 0,
+  }, 2, goals), 2);
+
+  const commentaryEvent = (id, category, playerId) => ({
+    comm_sub_event_id: id,
+    comm_event_id: Math.floor(id / 10),
+    category,
+    player_one_id: playerId,
+    time: 20,
+  });
+  const special = specialEventsByPlayer(goals, [
+    commentaryEvent(10, "PENALTY", 20),
+    commentaryEvent(11, "GOAL", null),
+    commentaryEvent(20, "PENALTY", 21),
+    commentaryEvent(21, "SAVE", 30),
+    commentaryEvent(30, "PENALTY", 22),
+    commentaryEvent(31, "OFFTARGET", null),
+  ]);
+  assert.equal(special.penaltyGoals.get(20), 1);
+  assert.equal(special.penaltyMisses.get(21), 1);
+  assert.equal(special.penaltySaves.get(30), 1);
+  assert.equal(special.penaltyMisses.get(22), 1);
+  assert.equal(special.ownGoals.get(12), 1);
 });
 
 test("uses half of a player's price profit when selling", () => {

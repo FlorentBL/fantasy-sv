@@ -19,7 +19,7 @@ const faqs = [
   ["When is my team locked?", "Your squad, starting eleven, captain and chips lock at the Soccerverse gameweek deadline."],
   ["How do automatic substitutions work?", "A non-playing starter is replaced by the first eligible bench player while keeping a valid formation."],
   ["What happens when my captain does not play?", "The vice-captain receives the captain multiplier when the captain plays zero minutes."],
-  ["How are bonus points awarded?", "The three strongest match performances receive three, two and one bonus points."],
+  ["How are bonus points awarded?", "SV-BPS combines the Soccerverse rating with minutes, goals, assists, clean sheets, saves, key actions and discipline. The top three ranks receive three, two and one points, and ties share the same award."],
   ["Can an administrator change points?", "Only audited corrections with a written reason are allowed, and every correction remains visible in the operations log."],
 ] as const;
 
@@ -101,6 +101,7 @@ export function BetaHelp() {
         <section className="help-card">
           <div><Scroll size={25} /><span>{t("Rules log")}</span><h2>{t("Current beta rules")}</h2></div>
           <ol className="rules-log">
+            <li><time>30/07/2026</time><p>{t("Scoring now uses on-pitch goals, penalty and own-goal events, plus a tie-aware Soccerverse BPS.")}</p></li>
             <li><time>30/07/2026</time><p>{t("Defensive contributions recalibrated to Soccerverse key tackles: 3 for defenders, 2 for midfielders and 3 for forwards.")}</p></li>
             <li><time>29/07/2026</time><p>{t("Full game loop launched: lineups, points, transfers, chips and private leagues.")}</p></li>
             <li><time>29/07/2026</time><p>{t("Player prices recalibrated so a strong balanced squad fits the 100-credit budget.")}</p></li>
