@@ -2,7 +2,11 @@
 
 import { ArrowCounterClockwise, Calculator } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import { scorePlayer, type PointBreakdown } from "@/lib/fantasy-rules";
+import {
+  DEFENSIVE_CONTRIBUTION_THRESHOLDS,
+  scorePlayer,
+  type PointBreakdown,
+} from "@/lib/fantasy-rules";
 import type { FantasyPosition } from "@/lib/fantasy";
 import { useI18n } from "@/lib/i18n";
 
@@ -13,7 +17,6 @@ type CalculatorStats = {
   assists: number;
   saves: number;
   keyTackles: number;
-  keyPasses: number;
   yellowCards: number;
   redCards: number;
   yellowRedCards: number;
@@ -28,7 +31,6 @@ const initialStats: CalculatorStats = {
   assists: 0,
   saves: 0,
   keyTackles: 0,
-  keyPasses: 0,
   yellowCards: 0,
   redCards: 0,
   yellowRedCards: 0,
@@ -41,8 +43,7 @@ const fields = [
   ["assists", "Assists", 10],
   ["teamGoalsConceded", "Goals conceded", 15],
   ["saves", "Saves", 30],
-  ["keyTackles", "Key tackles", 30],
-  ["keyPasses", "Key passes", 30],
+  ["keyTackles", "Key tackles", 10],
   ["yellowCards", "Yellow cards", 2],
   ["redCards", "Red cards", 1],
   ["yellowRedCards", "Second-yellow red cards", 1],
@@ -73,6 +74,7 @@ export function ScoreCalculator() {
   const [stats, setStats] = useState<CalculatorStats>(initialStats);
 
   const cleanSheetPoints: Record<FantasyPosition, number> = { GK: 4, DEF: 4, MID: 1, FWD: 0 };
+  const defensiveThreshold = DEFENSIVE_CONTRIBUTION_THRESHOLDS[position];
 
   const result = useMemo(() => scorePlayer({
     playerId: 0,
@@ -80,7 +82,7 @@ export function ScoreCalculator() {
     minutes: stats.minutes,
     saves: stats.saves,
     keyTackles: stats.keyTackles,
-    keyPasses: stats.keyPasses,
+    keyPasses: 0,
     assists: stats.assists,
     goals: stats.goals,
     yellowCards: stats.yellowCards,
@@ -213,7 +215,10 @@ export function ScoreCalculator() {
             ))}
           </div>
           <p className="score-calculator-note">
-            {t("Goals-conceded deductions and defensive-contribution points are calculated automatically.")}
+            {defensiveThreshold === null
+              ? t("Goalkeepers do not earn defensive-contribution points.")
+              : t("{count} key tackles earn 2 defensive-contribution points for this position.", { count: defensiveThreshold })}
+            {" "}{t("Goals-conceded deductions are calculated automatically.")}
           </p>
         </div>
 

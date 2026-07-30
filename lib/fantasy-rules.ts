@@ -16,6 +16,13 @@ export const STARTER_LIMITS = {
 export const CHIP_TYPES = ["wildcard", "free_hit", "bench_boost", "triple_captain"] as const;
 export type ChipType = typeof CHIP_TYPES[number];
 
+export const DEFENSIVE_CONTRIBUTION_THRESHOLDS = {
+  GK: null,
+  DEF: 3,
+  MID: 2,
+  FWD: 3,
+} satisfies Record<FantasyPosition, number | null>;
+
 export type LineupSelection = {
   playerId: number;
   slot: number;
@@ -132,12 +139,10 @@ export function scorePlayer(stats: MatchPlayerStats, bonus = 0) {
   const goalsConceded = stats.minutes >= 60 && (stats.position === "GK" || stats.position === "DEF")
     ? stats.teamGoalsConceded >= 2 ? -Math.floor(stats.teamGoalsConceded / 2) : 0
     : 0;
-  const defensiveActions = stats.keyTackles + stats.keyPasses;
-  const defensiveContribution = stats.position === "DEF" && defensiveActions >= 10
-    ? 2
-    : stats.position === "MID" && defensiveActions >= 12
-      ? 2
-      : 0;
+  const defensiveThreshold = DEFENSIVE_CONTRIBUTION_THRESHOLDS[stats.position];
+  const defensiveContribution = stats.minutes > 0
+    && defensiveThreshold !== null
+    && stats.keyTackles >= defensiveThreshold ? 2 : 0;
   const breakdown: PointBreakdown = {
     appearance,
     goals,

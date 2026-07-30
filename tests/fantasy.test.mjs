@@ -14,7 +14,15 @@ import {
 } from "../lib/fantasy.ts";
 import { normalizeDatapackMode, parseDatapackMode } from "../lib/datapack.ts";
 import { clubStrengths, fixtureDifficulty, projectionIndex } from "../lib/fantasy-planner.ts";
-import { defaultLineup, scorePlayer, sellingPrice, transferPointsCost, validateLineup, validateSquad } from "../lib/fantasy-rules.ts";
+import {
+  DEFENSIVE_CONTRIBUTION_THRESHOLDS,
+  defaultLineup,
+  scorePlayer,
+  sellingPrice,
+  transferPointsCost,
+  validateLineup,
+  validateSquad,
+} from "../lib/fantasy-rules.ts";
 
 function player(id, position, price = 5, clubId = id) {
   return {
@@ -227,6 +235,31 @@ test("scores Soccerverse match statistics with fantasy rules", () => {
     defensiveContribution: 2,
     bonus: 3,
   });
+});
+
+test("calibrates defensive contributions to Soccerverse key tackles", () => {
+  const base = {
+    playerId: 1,
+    minutes: 90,
+    saves: 0,
+    keyPasses: 30,
+    assists: 0,
+    goals: 0,
+    yellowCards: 0,
+    redCards: 0,
+    yellowRedCards: 0,
+    rating: 7,
+    teamGoalsConceded: 1,
+    manOfMatch: false,
+  };
+  assert.deepEqual(DEFENSIVE_CONTRIBUTION_THRESHOLDS, { GK: null, DEF: 3, MID: 2, FWD: 3 });
+  assert.equal(scorePlayer({ ...base, position: "DEF", keyTackles: 2 }).breakdown.defensiveContribution, 0);
+  assert.equal(scorePlayer({ ...base, position: "DEF", keyTackles: 3 }).breakdown.defensiveContribution, 2);
+  assert.equal(scorePlayer({ ...base, position: "MID", keyTackles: 1 }).breakdown.defensiveContribution, 0);
+  assert.equal(scorePlayer({ ...base, position: "MID", keyTackles: 2 }).breakdown.defensiveContribution, 2);
+  assert.equal(scorePlayer({ ...base, position: "FWD", keyTackles: 2 }).breakdown.defensiveContribution, 0);
+  assert.equal(scorePlayer({ ...base, position: "FWD", keyTackles: 3 }).breakdown.defensiveContribution, 2);
+  assert.equal(scorePlayer({ ...base, position: "GK", keyTackles: 30 }).breakdown.defensiveContribution, 0);
 });
 
 test("uses half of a player's price profit when selling", () => {

@@ -101,6 +101,7 @@ export function BetaHelp() {
         <section className="help-card">
           <div><Scroll size={25} /><span>{t("Rules log")}</span><h2>{t("Current beta rules")}</h2></div>
           <ol className="rules-log">
+            <li><time>30/07/2026</time><p>{t("Defensive contributions recalibrated to Soccerverse key tackles: 3 for defenders, 2 for midfielders and 3 for forwards.")}</p></li>
             <li><time>29/07/2026</time><p>{t("Full game loop launched: lineups, points, transfers, chips and private leagues.")}</p></li>
             <li><time>29/07/2026</time><p>{t("Player prices recalibrated so a strong balanced squad fits the 100-credit budget.")}</p></li>
             <li><time>29/07/2026</time><p>{t("Premier League restricted to Soccerverse division zero.")}</p></li>
