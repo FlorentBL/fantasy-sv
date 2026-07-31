@@ -455,6 +455,13 @@ test("runs logged synchronization and deadline alerts from the scheduled worker"
   assert.match(worker, /ctx\.waitUntil/);
 });
 
+test("locks each gameweek two hours before the Soccerverse kickoff", () => {
+  const seasonSource = readFileSync(new URL("../lib/soccerverse-season.ts", import.meta.url), "utf8");
+  assert.match(seasonSource, /GAMEWEEK_DEADLINE_LEAD_SECONDS = 2 \* 60 \* 60/);
+  assert.match(seasonSource, /const deadline = turn\.date - GAMEWEEK_DEADLINE_LEAD_SECONDS/);
+  assert.match(seasonSource, /deadline <= nowSeconds/);
+});
+
 test("awards classic mini-league honours after the final gameweek", () => {
   const seasonSource = readFileSync(new URL("../lib/soccerverse-season.ts", import.meta.url), "utf8");
   assert.match(seasonSource, /fantasy_manager_honours/);

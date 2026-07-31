@@ -19,6 +19,7 @@ const GSP_URL = "https://services.soccerverse.com/gsp/";
 const API_BASE = "https://services.soccerverse.com/api";
 const GAME_WORLD_ID = 1;
 const ENGLISH_TOP_LEVEL = 0;
+const GAMEWEEK_DEADLINE_LEAD_SECONDS = 2 * 60 * 60;
 
 type RpcResponse<T> = { result?: { data?: T }; error?: { message?: string } };
 type Season = { season_id: number; number: number; start: number; end: number; finished: boolean };
@@ -137,13 +138,14 @@ export async function syncSeasonSchedule(db: D1Database) {
       data.turns.length, data.season.start, data.season.end, now),
   ];
   for (const turn of data.turns) {
-    const status = turn.played ? "played" : turn.date <= nowSeconds ? "locked" : "upcoming";
+    const deadline = turn.date - GAMEWEEK_DEADLINE_LEAD_SECONDS;
+    const status = turn.played ? "played" : deadline <= nowSeconds ? "locked" : "upcoming";
     statements.push(db.prepare(`
       INSERT INTO fantasy_gameweeks (id, season_id, number, turn_id, deadline_at, status, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(season_id, number) DO UPDATE SET turn_id=excluded.turn_id, deadline_at=excluded.deadline_at,
         status=CASE WHEN fantasy_gameweeks.status='settled' THEN 'settled' ELSE excluded.status END, updated_at=excluded.updated_at
-    `).bind(`${data.season.season_id}:${turn.number}`, data.season.season_id, turn.number, turn.turn_id, turn.date, status, now));
+    `).bind(`${data.season.season_id}:${turn.number}`, data.season.season_id, turn.number, turn.turn_id, deadline, status, now));
   }
   for (const fixture of data.fixtures) {
     statements.push(db.prepare(`
