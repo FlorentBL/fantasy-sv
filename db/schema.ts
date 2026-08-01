@@ -71,6 +71,7 @@ export const fantasySeasons = sqliteTable("fantasy_seasons", {
   name: text("name").notNull(),
   status: text("status").default("active").notNull(),
   currentGameweek: integer("current_gameweek").default(1).notNull(),
+  fantasyStartGameweek: integer("fantasy_start_gameweek").default(1).notNull(),
   totalGameweeks: integer("total_gameweeks").default(38).notNull(),
   startsAt: integer("starts_at").notNull(),
   endsAt: integer("ends_at").notNull(),

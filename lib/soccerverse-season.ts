@@ -324,6 +324,9 @@ async function updatePlayerPrices(db: D1Database, seasonId: number, gameweek: nu
 }
 
 export async function settleFantasyTeams(db: D1Database, seasonId: number, gameweek: number) {
+  const fantasySeason = await db.prepare("SELECT fantasy_start_gameweek FROM fantasy_seasons WHERE id=?")
+    .bind(seasonId).first<{ fantasy_start_gameweek: number }>();
+  if (gameweek < (fantasySeason?.fantasy_start_gameweek || 1)) return;
   const teams = await db.prepare("SELECT user_id FROM fantasy_teams WHERE season_id=?").bind(seasonId).all<{ user_id: string }>();
   const now = Date.now();
   for (const team of teams.results) {
@@ -412,12 +415,14 @@ export async function settleFantasyTeams(db: D1Database, seasonId: number, gamew
       (
         SELECT s2.gameweek FROM fantasy_team_gameweek_scores s2
         WHERE s2.user_id=t.user_id AND s2.season_id=t.season_id
+          AND s2.gameweek>=season.fantasy_start_gameweek
         ORDER BY s2.total_points DESC, s2.gameweek ASC LIMIT 1
       ),
       ?
     FROM fantasy_teams t
+    JOIN fantasy_seasons season ON season.id=t.season_id
     LEFT JOIN fantasy_team_gameweek_scores s
-      ON s.user_id=t.user_id AND s.season_id=t.season_id
+      ON s.user_id=t.user_id AND s.season_id=t.season_id AND s.gameweek>=season.fantasy_start_gameweek
     WHERE t.season_id=?
     GROUP BY t.user_id, t.season_id
     ON CONFLICT(user_id, season_id) DO UPDATE SET

@@ -34,7 +34,7 @@ import type { FantasyView } from "@/app/fantasy-app";
 import extraStyles from "@/app/season-extras.module.css";
 
 type Bootstrap = {
-  season: { id: number; name: string; currentGameweek: number; totalGameweeks: number };
+  season: { id: number; name: string; currentGameweek: number; fantasyStartGameweek: number; totalGameweeks: number };
   gameweeks: Array<{ number: number; deadlineAt: number; status: string }>;
   fixtures: Array<{
     id: number; gameweek: number; kickoffAt: number; homeClubId: number; awayClubId: number;
@@ -49,6 +49,7 @@ type TeamPayload = {
   roster?: Array<{ playerId: number; purchasePriceTenths: number }>;
   lineup?: Array<LineupSelection>;
   scores?: Array<{ gameweek: number; playerPoints: number; transferCost: number; totalPoints: number; chip: string | null }>;
+  scoreLineups?: Array<LineupSelection & { gameweek: number; points: number; minutes: number }>;
   chips?: Array<{ gameweek: number; type: ChipType; period: number; state: string }>;
   gameweek?: { number: number; deadlineAt: number; status: string };
 };
@@ -177,6 +178,7 @@ export function SeasonHub({
   const [leagueTable, setLeagueTable] = useState<{ name: string; standings: LeagueStanding[] } | null>(null);
   const [globalRankings, setGlobalRankings] = useState<GlobalStanding[]>([]);
   const [pointsGameweek, setPointsGameweek] = useState(1);
+  const [scoreGameweek, setScoreGameweek] = useState<number | null>(null);
   const [playerPoints, setPlayerPoints] = useState<PlayerPointRow[]>([]);
   const importedTransferPlan = useRef(false);
   const userId = session?.user.id;
@@ -283,10 +285,24 @@ export function SeasonHub({
   const activeChipThisGameweek = teamData?.chips?.find((chip) => chip.gameweek === currentGameweek && chip.state === "active");
   const unlimitedTransfers = activeChipThisGameweek?.type === "wildcard" || activeChipThisGameweek?.type === "free_hit";
   const previewHit = unlimitedTransfers ? 0 : Math.max(0, transferBasket.length - (teamData?.team?.freeTransfers || 0)) * 4;
+  const selectedScore = teamData?.scores?.find((score) => score.gameweek === scoreGameweek);
+  const selectedScoreLineup = (teamData?.scoreLineups || []).filter((item) => item.gameweek === scoreGameweek);
+  const selectedStarters = selectedScoreLineup.filter((item) => item.isStarter).sort((a, b) => a.slot - b.slot);
+  const selectedBench = selectedScoreLineup.filter((item) => !item.isStarter)
+    .sort((a, b) => (a.benchOrder || 0) - (b.benchOrder || 0));
+
+  useEffect(() => {
+    const latest = teamData?.scores?.[0]?.gameweek;
+    if (latest && !teamData?.scores?.some((score) => score.gameweek === scoreGameweek)) {
+      queueMicrotask(() => setScoreGameweek(latest));
+    }
+  }, [scoreGameweek, teamData?.scores]);
 
   useEffect(() => {
     if (!bootstrap) return;
-    const settled = bootstrap.gameweeks.filter((item) => item.status === "settled").map((item) => item.number);
+    const settled = bootstrap.gameweeks
+      .filter((item) => item.status === "settled" && item.number >= bootstrap.season.fantasyStartGameweek)
+      .map((item) => item.number);
     const target = settled.at(-1) || Math.max(1, bootstrap.season.currentGameweek - 1);
     queueMicrotask(() => setPointsGameweek((current) => current === 1 ? target : current));
   }, [bootstrap]);
@@ -473,18 +489,74 @@ export function SeasonHub({
           <Clock size={25} weight="duotone" />
           <div>
             <span>{t("Gameweek {gameweek} deadline", { gameweek: currentGameweek })}</span>
-            <strong>{gameweek ? formatDeadline(gameweek.deadlineAt, locale) : "—"}</strong>
+            <strong>{gameweek ? formatDeadline(gameweek.deadlineAt, locale) : "-"}</strong>
             <small>{gameweek ? secondsRemaining(gameweek.deadlineAt, t("d")) : t("Loading…")}</small>
           </div>
         </div>
       </div>
 
       <div className="season-stats">
-        <article><Trophy size={22} /><span>{t("Total points")}</span><strong>{teamData?.team?.totalPoints ?? "—"}</strong></article>
-        <article><Medal size={22} /><span>{t("Overall rank")}</span><strong>{teamData?.team?.overallRank ? `#${teamData.team.overallRank}` : "—"}</strong></article>
-        <article><ArrowsLeftRight size={22} /><span>{t("Free transfers")}</span><strong>{teamData?.team?.freeTransfers ?? "—"}</strong></article>
-        <article><Shield size={22} /><span>{t("In the bank")}</span><strong>{teamData?.team ? (teamData.team.bankTenths / 10).toFixed(1) : "—"}</strong></article>
+        <article><Trophy size={22} /><span>{t("Total points")}</span><strong>{teamData?.team?.totalPoints ?? "-"}</strong></article>
+        <article><Medal size={22} /><span>{t("Overall rank")}</span><strong>{teamData?.team?.overallRank ? `#${teamData.team.overallRank}` : "-"}</strong></article>
+        <article><ArrowsLeftRight size={22} /><span>{t("Free transfers")}</span><strong>{teamData?.team?.freeTransfers ?? "-"}</strong></article>
+        <article><Shield size={22} /><span>{t("In the bank")}</span><strong>{teamData?.team ? (teamData.team.bankTenths / 10).toFixed(1) : "-"}</strong></article>
       </div>
+
+      {view === "team" && teamData?.team && (
+        <section className="team-score-card" id="scores">
+          <div className="hub-card-heading team-score-heading">
+            <div><span>{t("My scores")}</span><h3>{t("Gameweek score")}</h3></div>
+            {teamData.scores?.length ? (
+              <label>
+                <span className="sr-only">{t("Gameweek")}</span>
+                <select value={scoreGameweek || ""} onChange={(event) => setScoreGameweek(Number(event.target.value))}>
+                  {teamData.scores.map((score) => <option value={score.gameweek} key={score.gameweek}>GW {score.gameweek}</option>)}
+                </select>
+              </label>
+            ) : null}
+          </div>
+          {selectedScore ? (
+            <>
+              <div className="team-score-summary">
+                <div className="team-score-total"><span>{t("Final score")}</span><strong>{selectedScore.totalPoints}</strong><small>pts</small></div>
+                <div><span>{t("Player points")}</span><strong>{selectedScore.playerPoints}</strong></div>
+                <div><span>{t("Transfer cost")}</span><strong>{selectedScore.transferCost ? `-${selectedScore.transferCost}` : "0"}</strong></div>
+              </div>
+              <p className="team-score-note">{t("The final score includes captain points, automatic substitutions and transfer costs.")}</p>
+              <div className="team-score-lineups">
+                {([
+                  [t("Starting XI"), selectedStarters],
+                  [t("Bench"), selectedBench],
+                ] as const).map(([label, players]) => (
+                  <div className="team-score-group" key={label}>
+                    <h4>{label}</h4>
+                    <div>
+                      {players.map((selection) => {
+                        const player = playerById.get(selection.playerId);
+                        return (
+                          <a href={`/players/${selection.playerId}`} key={selection.playerId}>
+                            <span>
+                              <strong>{player?.name || `#${selection.playerId}`}</strong>
+                              <small>{player?.position || ""}{selection.isCaptain ? ` ${t("Captain")}` : selection.isViceCaptain ? ` ${t("Vice-captain")}` : ""}</small>
+                            </span>
+                            <b>{selection.points} pts</b>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="team-score-empty">
+              <Trophy size={28} weight="duotone" />
+              <strong>{t("No Fantasy score yet")}</strong>
+              <span>{t("Fantasy SV started in gameweek 4. Your score appears here after each completed gameweek.")}</span>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="season-grid">
         <section className="lineup-card">
@@ -497,7 +569,7 @@ export function SeasonHub({
               <div className="formation-selector">
                 <div>
                   <span>{t("Formation")}</span>
-                  <strong>{activeFormation || "—"}</strong>
+                  <strong>{activeFormation || "-"}</strong>
                 </div>
                 <div className="formation-options" role="group" aria-label={t("Choose a formation")}>
                   {FANTASY_FORMATIONS.map((formation) => (
@@ -579,7 +651,7 @@ export function SeasonHub({
                 return (
                   <div key={fixture.id}>
                     <span>{home}</span>
-                    <strong>{fixture.homeGoals == null ? formatDeadline(fixture.kickoffAt, locale).split(",").at(-1) : `${fixture.homeGoals}–${fixture.awayGoals}`}</strong>
+                    <strong>{fixture.homeGoals == null ? formatDeadline(fixture.kickoffAt, locale).split(",").at(-1) : `${fixture.homeGoals}-${fixture.awayGoals}`}</strong>
                     <span>{away}</span>
                   </div>
                 );
@@ -678,7 +750,7 @@ export function SeasonHub({
             <div className="hub-card-heading"><div><span>{t("Season")}</span><h3>{t("Points history")}</h3></div><Crown size={23} /></div>
             <div className="score-history">
               {teamData.scores?.map((score) => (
-                <div key={score.gameweek}><span>GW {score.gameweek}</span><strong>{score.totalPoints} pts</strong><small>{score.chip || (score.transferCost ? `-${score.transferCost}` : "—")}</small></div>
+                <div key={score.gameweek}><span>GW {score.gameweek}</span><strong>{score.totalPoints} pts</strong><small>{score.chip || (score.transferCost ? `-${score.transferCost}` : "-")}</small></div>
               ))}
               {!teamData.scores?.length && <p>{t("Your first score will appear after the next completed gameweek.")}</p>}
             </div>
@@ -707,7 +779,7 @@ export function SeasonHub({
             <label>
               <span className="sr-only">{t("Gameweek")}</span>
               <select value={pointsGameweek} onChange={(event) => setPointsGameweek(Number(event.target.value))}>
-                {(bootstrap?.gameweeks || []).filter((item) => item.status === "settled").map((item) => (
+                {(bootstrap?.gameweeks || []).filter((item) => item.status === "settled" && item.number >= (bootstrap?.season.fantasyStartGameweek || 1)).map((item) => (
                   <option value={item.number} key={item.number}>GW {item.number}</option>
                 ))}
               </select>

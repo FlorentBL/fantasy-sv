@@ -7,8 +7,9 @@ export const runtime = "edge";
 
 async function activeContext() {
   const season = await env.DB.prepare(`
-    SELECT id, current_gameweek currentGameweek FROM fantasy_seasons WHERE status='active' ORDER BY id DESC LIMIT 1
-  `).first<{ id: number; currentGameweek: number }>();
+    SELECT id, current_gameweek currentGameweek, fantasy_start_gameweek fantasyStartGameweek
+    FROM fantasy_seasons WHERE status='active' ORDER BY id DESC LIMIT 1
+  `).first<{ id: number; currentGameweek: number; fantasyStartGameweek: number }>();
   if (!season) throw new Error("La saison n'est pas encore initialisée.");
   const gameweek = await env.DB.prepare(`
     SELECT number, deadline_at deadlineAt, status FROM fantasy_gameweeks WHERE season_id=? AND number=?
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
       FROM fantasy_teams WHERE user_id=? AND season_id=?
     `).bind(user.id, context.season.id).first<Record<string, unknown>>();
     if (!team) return noStoreJson({ team: null, ...context });
-    const [roster, lineup, scores, transfers, chips] = await Promise.all([
+    const [roster, lineup, scores, scoreLineups, transfers, chips] = await Promise.all([
       env.DB.prepare(`
         SELECT player_id playerId, position, club_id clubId, purchase_price_tenths purchasePriceTenths,
           acquired_gameweek acquiredGameweek FROM fantasy_roster WHERE user_id=? ORDER BY player_id
@@ -40,8 +41,23 @@ export async function GET(request: Request) {
       `).bind(user.id, context.season.id, context.gameweek.number).all<Record<string, unknown>>(),
       env.DB.prepare(`
         SELECT gameweek, player_points playerPoints, transfer_cost transferCost, total_points totalPoints, chip
-        FROM fantasy_team_gameweek_scores WHERE user_id=? AND season_id=? ORDER BY gameweek DESC
-      `).bind(user.id, context.season.id).all<Record<string, unknown>>(),
+        FROM fantasy_team_gameweek_scores
+        WHERE user_id=? AND season_id=? AND gameweek>=? ORDER BY gameweek DESC
+      `).bind(user.id, context.season.id, context.season.fantasyStartGameweek).all<Record<string, unknown>>(),
+      env.DB.prepare(`
+        SELECT l.gameweek, l.player_id playerId, l.slot, l.is_starter isStarter,
+          l.bench_order benchOrder, l.is_captain isCaptain, l.is_vice_captain isViceCaptain,
+          COALESCE(p.points, 0) points, COALESCE(p.minutes, 0) minutes
+        FROM fantasy_lineups l
+        LEFT JOIN fantasy_player_gameweek_points p
+          ON p.season_id=l.season_id AND p.gameweek=l.gameweek AND p.player_id=l.player_id
+        WHERE l.user_id=? AND l.season_id=? AND l.gameweek>=?
+          AND EXISTS (
+            SELECT 1 FROM fantasy_team_gameweek_scores s
+            WHERE s.user_id=l.user_id AND s.season_id=l.season_id AND s.gameweek=l.gameweek
+          )
+        ORDER BY l.gameweek DESC, l.slot
+      `).bind(user.id, context.season.id, context.season.fantasyStartGameweek).all<Record<string, unknown>>(),
       env.DB.prepare(`
         SELECT gameweek, player_out_id playerOutId, player_in_id playerInId, points_cost pointsCost, created_at createdAt
         FROM fantasy_transfers WHERE user_id=? AND season_id=? ORDER BY created_at DESC LIMIT 20
@@ -55,6 +71,7 @@ export async function GET(request: Request) {
       roster: roster.results,
       lineup: lineup.results,
       scores: scores.results,
+      scoreLineups: scoreLineups.results,
       transfers: transfers.results,
       chips: chips.results,
       ...context,

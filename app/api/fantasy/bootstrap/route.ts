@@ -11,7 +11,8 @@ export async function GET() {
     if (!stale || stale.synced_at < Date.now() - 10 * 60 * 1000) await syncSeasonSchedule(env.DB);
 
     const season = await env.DB.prepare(`
-      SELECT id, league_id leagueId, name, current_gameweek currentGameweek, total_gameweeks totalGameweeks
+      SELECT id, league_id leagueId, name, current_gameweek currentGameweek,
+        fantasy_start_gameweek fantasyStartGameweek, total_gameweeks totalGameweeks
       FROM fantasy_seasons WHERE status='active' ORDER BY id DESC LIMIT 1
     `).first<Record<string, unknown>>();
     if (!season) throw new Error("Saison Fantasy SV indisponible.");
@@ -35,4 +36,3 @@ export async function GET() {
     });
   }
 }
-

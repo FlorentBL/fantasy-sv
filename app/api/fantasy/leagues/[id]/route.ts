@@ -17,8 +17,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
         COUNT(s.id) played
       FROM fantasy_league_members m
       JOIN fantasy_teams t ON t.user_id=m.user_id
+      JOIN fantasy_seasons season ON season.id=t.season_id
       JOIN user u ON u.id=m.user_id
-      LEFT JOIN fantasy_team_gameweek_scores s ON s.user_id=m.user_id
+      LEFT JOIN fantasy_team_gameweek_scores s
+        ON s.user_id=m.user_id AND s.season_id=t.season_id AND s.gameweek>=season.fantasy_start_gameweek
       WHERE m.league_id=?
       GROUP BY m.user_id ORDER BY t.total_points DESC, t.updated_at ASC
     `).bind(id).all<Record<string, unknown>>();
@@ -27,4 +29,3 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     return apiError(error, 404);
   }
 }
-

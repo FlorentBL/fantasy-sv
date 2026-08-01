@@ -84,6 +84,27 @@ test("localizes the countdown day abbreviation", () => {
   assert.match(seasonHubSource, /secondsRemaining\(gameweek\.deadlineAt, t\("d"\)\)/);
 });
 
+test("starts the current Fantasy season in gameweek four", () => {
+  const migration = readFileSync(new URL("../drizzle/0006_fantasy_start_gameweek.sql", import.meta.url), "utf8");
+  const bootstrapRoute = readFileSync(new URL("../app/api/fantasy/bootstrap/route.ts", import.meta.url), "utf8");
+  const rankingsRoute = readFileSync(new URL("../app/api/fantasy/rankings/route.ts", import.meta.url), "utf8");
+  assert.match(migration, /fantasy_start_gameweek/);
+  assert.match(migration, /SET `fantasy_start_gameweek` = 4 WHERE `id` = 4/);
+  assert.match(bootstrapRoute, /fantasy_start_gameweek fantasyStartGameweek/);
+  assert.match(rankingsRoute, /SELECT COUNT\(\*\).*fantasy_team_gameweek_scores/s);
+  assert.doesNotMatch(rankingsRoute, /MAX\(gameweek\)/);
+});
+
+test("shows authenticated gameweek scores in My Team", () => {
+  const seasonHubSource = readFileSync(new URL("../app/season-hub.tsx", import.meta.url), "utf8");
+  const teamRoute = readFileSync(new URL("../app/api/fantasy/team/route.ts", import.meta.url), "utf8");
+  assert.match(seasonHubSource, /view === "team".*className="team-score-card"/s);
+  assert.match(seasonHubSource, /setScoreGameweek/);
+  assert.match(seasonHubSource, /selectedScore\.totalPoints/);
+  assert.match(teamRoute, /scoreLineups/);
+  assert.match(teamRoute, /l\.gameweek>=\?/);
+});
+
 test("queries Soccerverse division zero for the English top flight", () => {
   const marketSource = readFileSync(new URL("../lib/soccerverse-market.ts", import.meta.url), "utf8");
   const appSource = readFileSync(new URL("../app/fantasy-app.tsx", import.meta.url), "utf8");

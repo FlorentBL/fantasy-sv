@@ -151,7 +151,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .lineup-card,
 .fixtures-card,
 .chips-card,
-.management-card {
+.management-card,
+.team-score-card {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -173,6 +174,101 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .hub-card-heading > small,
 .hub-card-heading > svg { color: var(--muted); font-size: 9px; }
+.team-score-card {
+  margin-bottom: 18px;
+  padding: 22px;
+}
+.team-score-heading label select {
+  min-height: 40px;
+  padding: 0 32px 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+.team-score-summary {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--line);
+  gap: 1px;
+}
+.team-score-summary > div {
+  min-height: 88px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 15px 18px;
+  background: var(--surface-2);
+}
+.team-score-summary span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 780;
+  text-transform: uppercase;
+}
+.team-score-summary strong { font-size: 22px; letter-spacing: -.035em; }
+.team-score-summary .team-score-total {
+  grid-template-columns: auto auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: baseline;
+  column-gap: 5px;
+  background: var(--ink);
+  color: #f7f9fc;
+}
+.team-score-total span { grid-column: 1 / -1; color: #aebbd0; }
+.team-score-total strong { font-size: 34px; }
+.team-score-total small { color: #82a2ff; font-family: var(--font-geist-mono); font-size: 11px; }
+.team-score-note {
+  margin: 10px 0 18px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.team-score-lineups { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.team-score-group h4 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.team-score-group > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.team-score-group:last-child > div { grid-template-columns: 1fr; }
+.team-score-group a {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background .18s ease, transform .18s ease;
+}
+.team-score-group a:hover { background: var(--accent-soft); transform: translateY(-1px); }
+.team-score-group a:active { transform: translateY(1px); }
+.team-score-group a > span { min-width: 0; display: grid; gap: 2px; }
+.team-score-group a strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.team-score-group a small { color: var(--muted); font-size: 8px; }
+.team-score-group a b { color: var(--accent-dark); font-family: var(--font-geist-mono); font-size: 12px; }
+.team-score-empty {
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  color: var(--muted);
+  text-align: center;
+}
+.team-score-empty svg { color: var(--accent); }
+.team-score-empty strong { color: var(--ink); font-size: 13px; }
+.team-score-empty span { max-width: 460px; font-size: 10px; }
 .formation-selector {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1057,6 +1153,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .season-stats article:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .season-stats article { min-height: 78px; padding: 13px; }
   .season-stats strong { font-size: 18px; }
+  .team-score-card { padding: 14px; }
+  .team-score-summary { grid-template-columns: 1fr 1fr; }
+  .team-score-summary .team-score-total { grid-column: 1 / -1; }
+  .team-score-summary > div { min-height: 74px; padding: 12px; }
+  .team-score-lineups { grid-template-columns: 1fr; gap: 16px; }
+  .team-score-group > div { grid-template-columns: 1fr; }
   .lineup-card { padding: 14px; }
   .lineup-pitch { min-height: 500px; padding: 18px 4px 15px; }
   .lineup-pitch::before { inset: 9px; }
