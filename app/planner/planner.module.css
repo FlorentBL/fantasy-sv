@@ -81,8 +81,9 @@
 .compare { grid-template-columns: 1fr; }
 .compareControls { display: grid; grid-template-columns: 1fr 42px 1fr; gap: 12px; align-items: end; padding: 18px; border-bottom: 1px solid var(--line); }
 .versus { height: 44px; display: grid; place-items: center; color: var(--accent); }
-.compareGrid { display: grid; grid-template-columns: 1fr 120px 1fr; }
-.playerColumn { padding: 22px; }
+.compareGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.playerColumn { min-width: 0; padding: 22px; }
+.playerColumn + .playerColumn { border-left: 1px solid var(--line); }
 .playerColumn h3 { margin: 0; font-size: clamp(24px, 3vw, 38px); letter-spacing: -.04em; }
 .playerMeta { margin: 5px 0 20px; color: var(--muted); }
 .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); }
@@ -134,7 +135,7 @@
   .versus { height: 20px; }
   .compareGrid { grid-template-columns: 1fr; }
   .metricLabels { display: none; }
-  .playerColumn + .playerColumn { border-top: 1px solid var(--line); }
+  .playerColumn + .playerColumn { border-top: 1px solid var(--line); border-left: 0; }
   .scheduleStrip { overflow-x: auto; grid-template-columns: repeat(5, minmax(72px, 1fr)); }
   .planSummary { grid-template-columns: 1fr; }
   .planRow { grid-template-columns: 1fr 22px 1fr 34px; padding-inline: 10px; }
